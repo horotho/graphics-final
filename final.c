@@ -119,9 +119,9 @@ void drawParticle(particle p)
   glBegin(GL_QUADS);
     glNormal3f(0, 0, 1);
     glTexCoord2f(0, 0);    glVertex3f(p.x, p.y, p.z);
-    glTexCoord2f(0.95, 0); glVertex3f(p.x, p.y + p.scale, p.z);
-    glTexCoord2f(1, 1);    glVertex3f(p.x + p.scale, p.y + p.scale, p.z);
-    glTexCoord2f(0, 0.95); glVertex3f(p.x + p.scale, p.y, p.z);
+    glTexCoord2f(0.90, 0); glVertex3f(p.x, p.y + p.scale, p.z);
+    glTexCoord2f(0.90, 0.90);    glVertex3f(p.x + p.scale, p.y + p.scale, p.z);
+    glTexCoord2f(0, 0.90); glVertex3f(p.x + p.scale, p.y, p.z);
   glEnd();
   
   prev_texture = particle_textures[p.texture_id];

@@ -2,6 +2,10 @@
 #include "CSCIx229.h"
 #include "time.h"
 
+#define INITIAL_SCALE 2
+#define END_SCALE 1
+
+
 float getRandom()
 {
   return (float)rand()/(float)RAND_MAX;
@@ -13,7 +17,7 @@ void initParticles(particle* parray)
   
   pgroup pg = (pgroup)
   {
-    2, 1,
+    INITIAL_SCALE, END_SCALE,
     (color) {200, 0, 0}, (color) {255, 255, 255}
   };
   
@@ -27,7 +31,7 @@ void initParticles(particle* parray)
     p->y = 0;
     p->z = 0;
     
-    p->vx = getRandom() - 0.5;
+    //p->vx = getRandom() - 0.5;
     p->vy = getRandom() + 1;
     p->vz = getRandom() - 0.5;
     
@@ -67,7 +71,7 @@ void updateParticles(particle* parray, double time, double timestep)
     p->current_color.g = pg.initial_color.g + percent * (pg.end_color.g - pg.initial_color.g);
     p->current_color.b = pg.initial_color.b + percent * (pg.end_color.b - pg.initial_color.b);
     
-    if((time - p->spawn_time) > p->life_time)
+    if(percent == 1)
     {
       p->deathptr(p, time);
     }
@@ -76,9 +80,12 @@ void updateParticles(particle* parray, double time, double timestep)
 
 void onParticleDeathSmoke(particle *p, double time)
 {
-  p->x = getRandom() * 0.5;
+  
+  //p->vx = getRandom() - 0.5;
+  
+  p->x = getRandom();
   p->y = getRandom() - 0.5;
-  p->z = getRandom() * 0.5;
+  p->z = getRandom();
   
   p->texture_id = 0;
   p->life_time = 2*getRandom() + 2;
@@ -86,10 +93,10 @@ void onParticleDeathSmoke(particle *p, double time)
   
   p->initial_alpha = 255;
   p->current_alpha = p->initial_alpha;
-  p->end_alpha = p->initial_alpha/2;
+  p->end_alpha = 255;
  
-  p->group.initial_scale = 2;
-  p->group.end_scale = 1;
+  p->group.initial_scale = INITIAL_SCALE;
+  p->group.end_scale = END_SCALE;
   p->scale = p->group.initial_scale;
   
   p->group.initial_color = (color) {200, 0, 0};
@@ -102,20 +109,23 @@ void onParticleDeathSmoke(particle *p, double time)
 
 void onParticleDeathFlame(particle *p, double time)
 {
+  
+  p->vx = 0;
+  
   p->texture_id = 1;
-  p->life_time = getRandom();
+  p->life_time = getRandom() + 1;
   p->spawn_time = time;
   
   p->group.initial_scale = 1;
-  p->group.end_scale = 0;
+  p->group.end_scale = 1;
   p->scale = p->group.initial_scale;
   
   p->group.initial_color = (color) {100, 100, 100};
   p->group.end_color = (color) {255, 255, 255};
   p->current_color = p->group.initial_color;
   
-  p->initial_alpha = 125;
-  p->end_alpha = 0;
+  p->initial_alpha = 127;
+  p->end_alpha = 127;
   
   p->deathptr = &onParticleDeathSmoke;
 }
