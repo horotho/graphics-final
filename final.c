@@ -48,9 +48,8 @@ double ambient = 0.15;
 double specular = 0.5;
 double diffuse = 0.8;
 
-double lx = 0;
-double ly = 2;
-double lz = 0;
+double x = 0, y = 2, z = 6;
+double lx = 0, ly = 0, lz = -1;
 
 double prevTime;
 int mouseX = 0, mouseY = 0;
@@ -112,8 +111,7 @@ void drawSky(double d)
   glDisable(GL_BLEND);
   glEnable(GL_DEPTH_TEST);
     
-  if(prev_texture != sky_textures[0]);
-    glBindTexture(GL_TEXTURE_2D, sky_textures[0]);
+  glBindTexture(GL_TEXTURE_2D, sky_textures[0]);
 
   glColor4ub(255, 255, 255, 255);
   glBegin(GL_QUADS);
@@ -154,9 +152,9 @@ void drawSky(double d)
     glTexCoord2f(0.25, 0.70); glVertex3f(+d, -d, -d);
 
   glEnd();
-
-  prev_texture = sky_textures[0];
   
+  prev_texture = sky_textures[0];
+
   glEnable(GL_BLEND);
   glDisable(GL_DEPTH_TEST);
 }
@@ -173,15 +171,15 @@ void drawParticle(particle p)
   
   if(prev_texture != particle_textures[p.texture_id])
     glBindTexture(GL_TEXTURE_2D, particle_textures[p.texture_id]);
-  
+    
   glColor4ub(p.current_color.r, p.current_color.g, p.current_color.b, p.current_alpha);
   
   glBegin(GL_QUADS);
     glNormal3f(0, 0, 1);
-    glTexCoord2f(0, 0);    glVertex3f(p.x, p.y, p.z);
-    glTexCoord2f(0.90, 0); glVertex3f(p.x, p.y + p.scale, p.z);
-    glTexCoord2f(0.90, 0.90);    glVertex3f(p.x + p.scale, p.y + p.scale, p.z);
-    glTexCoord2f(0, 0.90); glVertex3f(p.x + p.scale, p.y, p.z);
+    glTexCoord2f(0.10, 0.10);  glVertex3f(p.x, p.y, p.z);
+    glTexCoord2f(0.90, 0.10);  glVertex3f(p.x, p.y + p.scale, p.z);
+    glTexCoord2f(0.90, 0.90);  glVertex3f(p.x + p.scale, p.y + p.scale, p.z);
+    glTexCoord2f(0.10, 0.90);  glVertex3f(p.x + p.scale, p.y, p.z);
   glEnd();
   
   prev_texture = particle_textures[p.texture_id];
@@ -195,7 +193,7 @@ void drawGroundTile(double x, double z)
   if(prev_texture != ground_textures[0])
     glBindTexture(GL_TEXTURE_2D, ground_textures[0]);
     
-  glTranslatef(x, -1, z);
+  glTranslatef(x, -5, z);
   
   glColor4ub(255, 255, 255, 255);
   glBegin(GL_QUADS);
@@ -284,16 +282,17 @@ void display()
     if (MODE == MODE_PERSPECTIVE)
     {
       // Cross products galore!
-      double Ex = -dim * Sin(th) * Cos(ph);
-      double Ey = +dim * Sin(ph);
-      double Ez = +dim * Cos(th) * Cos(ph);
-      gluLookAt(Ex, Ey, Ez, 0, 0, 0, 0, 1, 0);
+      //double Ex = -dim * Sin(th) * Cos(ph);
+      //double Ey = +dim * Sin(ph);
+      //double Ez = +dim * Cos(th) * Cos(ph);
+      //gluLookAt(Ex, Ey, Ez, 0, 0, 0, 0, 1, 0);
       
       //printf("Ex = %f, Ey = %f, Ez = %f\n", Ex, Ey, Ez);
       //double Ex = -dim*2, Ey = 0, Ez = dim*2;
-      //gluLookAt(0, 2, 6,   lx, ly, lz,    0, 1, 0);
+      gluLookAt(x, y, z,   x + lx, y + ly, z + lz,    0, 1, 0);
       
-      //printf("Lx = %f, Ly = %f, Lz = %f\n", lx, ly, lz);
+      //printf("Lx = %.3f, Ly = %.3f, Lz = %.3f\n", lx, ly, lz);
+      //printf("x = %0.3f, y = %0.3f, z = %0.3f\n", x, y, z);
     }
     //  Orthogonal - set world orientation
     else
@@ -343,16 +342,16 @@ void display()
      
     glEnable(GL_TEXTURE_2D); 
     
-    drawSky(20);
+    drawSky(4 * dim);
     
     int i, j;
-    //for(i = -5; i <= 5; i++)
-    //{
-      //for(j = -5; j <= 5; j++)
-      //{
-        //drawGroundTile(i, j);
-      //}
-    //}
+    for(i = -4*dim; i <= 4*dim; i++)
+    {
+      for(j = -4*dim; j <= 4*dim; j++)
+      {
+        drawGroundTile(i, j);
+      }
+    }
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
@@ -372,6 +371,7 @@ void display()
     if(AXES_MODE == AXES_MODE_ON)
     {
       //  Draw axes in white
+      glLineWidth(2);
       glBegin(GL_LINES);
       glColor3f(1, 0, 0);
       glVertex3d(-AXES_LENGTH,0,0);
@@ -461,29 +461,28 @@ void motion(int x, int y)
   if(x - mouseX > 0)
   {
      th++;
-     lx += 0.1;
-     lz += 0.1;
   }
   if(x - mouseX < 0)
   {
      th--;
-     lx -= 0.1;
-     lz -= 0.1;
   }
   
   if(y - mouseY > 0)
   {
-    ly -= 0.1;
     ph++;
+    ly -= 0.01;
   }
   if(y - mouseY < 0)
   {
-     ph--;
-     ly += 0.1;
+    ph--;
+    ly += 0.01;
   }
 
   th = th % 360;
   ph = ph % 360;
+  
+  lx = Sin(th);
+  lz = -Cos(th);
 
   mouseX = x;
   mouseY = y;
@@ -536,7 +535,7 @@ void mouse(int button, int state, int x, int y)
  * + : increase fov
  * - : decrease fov
  */
-void key(unsigned char ch, int x, int y)
+void key(unsigned char ch, int xx, int yy)
 {
   switch(ch)
   {
@@ -547,7 +546,13 @@ void key(unsigned char ch, int x, int y)
       AXES_MODE = !AXES_MODE;
       break;
     case 'w':
-      LIGHTING_MODE = !LIGHTING_MODE;
+      //LIGHTING_MODE = !LIGHTING_MODE;
+      x += lx * 0.2;
+      z += lz * 0.2;
+      break;
+    case 's':
+      x -= lx * 0.2;
+      z -= lz * 0.2;
       break;
     case '+':
       if(MODE == MODE_PERSPECTIVE)
@@ -621,24 +626,28 @@ void special(int key, int x, int y)
    //  Right arrow key - increase azimuth by 5 degrees
    if(key == GLUT_KEY_RIGHT)
    {
-          th += 5;
-          lx += 0.5;
-          lz += 0.5;
+     th += 5;
    }
    
    //  Left arrow key - decrease azimuth by 5 degrees
    else if(key == GLUT_KEY_LEFT)
    {
-      th -= 5;
-      lx -= 0.5;
-      lz -= 0.5;
+     th -= 5;
    }
    
    //  Up arrow key - increase elevation by 5 degrees
-   else if(key == GLUT_KEY_UP)   ph += 5;
+   else if(key == GLUT_KEY_UP)
+   {
+     ph += 5;
+     ly += 0.01;
+   }
    
    //  Down arrow key - decrease elevation by 5 degrees
-   else if(key == GLUT_KEY_DOWN) ph -= 5;
+   else if(key == GLUT_KEY_DOWN)
+   {
+     ph -= 5;
+     ly -= 0.01;
+   }
    
    //  F1 key increases the dimension of the box by 0.1
    else if(key == GLUT_KEY_F1)   dim += 0.1;
@@ -649,6 +658,9 @@ void special(int key, int x, int y)
    //  Keep angles to +/-360 degrees
    th %= 360;
    ph %= 360;
+   
+   lx = Sin(th);
+   lz = -Cos(th);
    
    setProjection();
    //  Tell GLUT it is necessary to redisplay the scene
