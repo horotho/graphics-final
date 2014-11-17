@@ -110,6 +110,7 @@ static void setProjection()
 void drawSky(double d)
 {
   glDisable(GL_BLEND);
+  glEnable(GL_DEPTH_TEST);
     
   if(prev_texture != sky_textures[0]);
     glBindTexture(GL_TEXTURE_2D, sky_textures[0]);
@@ -117,30 +118,47 @@ void drawSky(double d)
   glColor4ub(255, 255, 255, 255);
   glBegin(GL_QUADS);
     // Top
-    glTexCoord2f(0.25, 0.3); glVertex3f(-d, d, -d);
-    glTexCoord2f(0.25, 0);   glVertex3f(-d, d, d);
-    glTexCoord2f(0.5, 0);    glVertex3f(d, d, d);
-    glTexCoord2f(0.5, 0.3);  glVertex3f(d, d, -d);
+    glTexCoord2f(0.25, 0.30); glVertex3f(-d, +d, -d);
+    glTexCoord2f(0.25, 0.00); glVertex3f(-d, +d, +d);
+    glTexCoord2f(0.50, 0.00); glVertex3f(+d, +d, +d);
+    glTexCoord2f(0.50, 0.30); glVertex3f(+d, +d, -d);
     
     // Front
-    glTexCoord2f(0.25, 0.3); glVertex3f(-d, d, -d);
-    glTexCoord2f(0.25, 0.6); glVertex3f(-d, -d, -d);
-    glTexCoord2f(0.5, 0.6);  glVertex3f(d, -d, -d);
-    glTexCoord2f(0.5, 0.3);  glVertex3f(d, d, -d);
+    glTexCoord2f(0.25, 0.30); glVertex3f(-d, +d, -d);
+    glTexCoord2f(0.25, 0.50); glVertex3f(-d, -d, -d);
+    glTexCoord2f(0.50, 0.50); glVertex3f(+d, -d, -d);
+    glTexCoord2f(0.50, 0.30); glVertex3f(+d, +d, -d);
     
-    // Left
-    glTexCoord2f(0, 0.3);    glVertex3f(d, d, d);
-    glTexCoord2f(0, 0.6);    glVertex3f(-d, d, d);
-    glTexCoord2f(0.25, 0.6); glVertex3f(-d, -d, d);
-    glTexCoord2f(0.25, 0.3); glVertex3f(d, -d, d);
+    // Back
+    glTexCoord2f(0.75, 0.30); glVertex3f(+d, +d, +d);
+    glTexCoord2f(1.00, 0.30); glVertex3f(-d, +d, +d);
+    glTexCoord2f(1.00, 0.50); glVertex3f(-d, -d, +d);
+    glTexCoord2f(0.75, 0.50); glVertex3f(+d, -d, +d);
     
+    //Left 
+    glTexCoord2f(0.25, 0.50); glVertex3f(-d, -d, -d);
+    glTexCoord2f(0.00, 0.50); glVertex3f(-d, -d, +d);
+    glTexCoord2f(0.00, 0.30); glVertex3f(-d, +d, +d);
+    glTexCoord2f(0.25, 0.30); glVertex3f(-d, +d, -d);
     
+    // Right
+    glTexCoord2f(0.50, 0.50); glVertex3f(+d, -d, -d);
+    glTexCoord2f(0.75, 0.50); glVertex3f(+d, -d, +d);
+    glTexCoord2f(0.75, 0.30); glVertex3f(+d, +d, +d);
+    glTexCoord2f(0.50, 0.30); glVertex3f(+d, +d, -d);
+    
+    //Bottom
+    glTexCoord2f(0.25, 0.50); glVertex3f(-d, -d, -d);
+    glTexCoord2f(0.50, 0.50); glVertex3f(-d, -d, +d);
+    glTexCoord2f(0.50, 0.70); glVertex3f(+d, -d, +d);
+    glTexCoord2f(0.25, 0.70); glVertex3f(+d, -d, -d);
+
   glEnd();
 
   prev_texture = sky_textures[0];
   
   glEnable(GL_BLEND);
-  
+  glDisable(GL_DEPTH_TEST);
 }
 
 void drawHouse()
@@ -269,12 +287,11 @@ void display()
       double Ex = -dim * Sin(th) * Cos(ph);
       double Ey = +dim * Sin(ph);
       double Ez = +dim * Cos(th) * Cos(ph);
+      gluLookAt(Ex, Ey, Ez, 0, 0, 0, 0, 1, 0);
       
       //printf("Ex = %f, Ey = %f, Ez = %f\n", Ex, Ey, Ez);
-      
       //double Ex = -dim*2, Ey = 0, Ez = dim*2;
-      
-      gluLookAt(0, 2, 6,   lx, ly, lz,    0, 1, 0);
+      //gluLookAt(0, 2, 6,   lx, ly, lz,    0, 1, 0);
       
       //printf("Lx = %f, Ly = %f, Lz = %f\n", lx, ly, lz);
     }
@@ -329,13 +346,13 @@ void display()
     drawSky(20);
     
     int i, j;
-    for(i = -5; i <= 5; i++)
-    {
-      for(j = -5; j <= 5; j++)
-      {
-        drawGroundTile(i, j);
-      }
-    }
+    //for(i = -5; i <= 5; i++)
+    //{
+      //for(j = -5; j <= 5; j++)
+      //{
+        //drawGroundTile(i, j);
+      //}
+    //}
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 

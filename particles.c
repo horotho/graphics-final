@@ -2,8 +2,8 @@
 #include "CSCIx229.h"
 #include "time.h"
 
-#define INITIAL_SCALE 2
-#define END_SCALE 1
+#define INITIAL_SCALE 1
+#define END_SCALE 0.5
 
 float getRandom()
 {
