@@ -11,6 +11,7 @@
 
 #define PI 3.14159265
 #define NUM_TEXTURES 4
+#define AXES_LENGTH 3
 
 enum
 {
@@ -47,12 +48,17 @@ double ambient = 0.15;
 double specular = 0.5;
 double diffuse = 0.8;
 
+double lx = 0;
+double ly = 2;
+double lz = 0;
+
 double prevTime;
 int mouseX = 0, mouseY = 0;
 
 unsigned int particle_textures[5];
 unsigned int cone_textures[1];
 unsigned int ground_textures[1];
+unsigned int sky_textures[1];
 unsigned int prev_texture;
 
 particle particles[MAX_PARTICLES];
@@ -72,8 +78,9 @@ void initTextures()
   {
     ground_textures[i] = loadPng(gnames[i]);
   }
+  
+  sky_textures[0] = loadPng("sky.png");
 }
-
 
 /*
  *  Projection Alteration
@@ -100,16 +107,51 @@ static void setProjection()
    glLoadIdentity();
 }
 
+void drawSky(double d)
+{
+  glDisable(GL_BLEND);
+    
+  if(prev_texture != sky_textures[0]);
+    glBindTexture(GL_TEXTURE_2D, sky_textures[0]);
+
+  glColor4ub(255, 255, 255, 255);
+  glBegin(GL_QUADS);
+    // Top
+    glTexCoord2f(0.25, 0.3); glVertex3f(-d, d, -d);
+    glTexCoord2f(0.25, 0);   glVertex3f(-d, d, d);
+    glTexCoord2f(0.5, 0);    glVertex3f(d, d, d);
+    glTexCoord2f(0.5, 0.3);  glVertex3f(d, d, -d);
+    
+    // Front
+    glTexCoord2f(0.25, 0.3); glVertex3f(-d, d, -d);
+    glTexCoord2f(0.25, 0.6); glVertex3f(-d, -d, -d);
+    glTexCoord2f(0.5, 0.6);  glVertex3f(d, -d, -d);
+    glTexCoord2f(0.5, 0.3);  glVertex3f(d, d, -d);
+    
+    // Left
+    glTexCoord2f(0, 0.3);    glVertex3f(d, d, d);
+    glTexCoord2f(0, 0.6);    glVertex3f(-d, d, d);
+    glTexCoord2f(0.25, 0.6); glVertex3f(-d, -d, d);
+    glTexCoord2f(0.25, 0.3); glVertex3f(d, -d, d);
+    
+    
+  glEnd();
+
+  prev_texture = sky_textures[0];
+  
+  glEnable(GL_BLEND);
+  
+}
+
+void drawHouse()
+{
+  
+}
+
+
 void drawParticle(particle p)
 {
   glDepthMask(GL_FALSE);
-  //float white[] = {1, 1, 1, 1};
-  //float dark[] = {0, 0, 0, 0};
-  //float shiny[] = {16};
-
-  //glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shiny);
-  //glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, white);
-  //glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, dark);
   
   if(prev_texture != particle_textures[p.texture_id])
     glBindTexture(GL_TEXTURE_2D, particle_textures[p.texture_id]);
@@ -129,9 +171,12 @@ void drawParticle(particle p)
 
 void drawGroundTile(double x, double z)
 {
-  glEnable(GL_DEPTH_TEST);
+  glDepthMask(GL_TRUE);
   glPushMatrix();
-  glBindTexture(GL_TEXTURE_2D, ground_textures[0]);
+  
+  if(prev_texture != ground_textures[0])
+    glBindTexture(GL_TEXTURE_2D, ground_textures[0]);
+    
   glTranslatef(x, -1, z);
   
   glColor4ub(255, 255, 255, 255);
@@ -143,8 +188,8 @@ void drawGroundTile(double x, double z)
   glEnd();
   
   glPopMatrix();
-  glBindTexture(GL_TEXTURE_2D, 0);
-  glDisable(GL_DEPTH_TEST);
+  
+  prev_texture = ground_textures[0];
 }
 
 void drawSourcePrism(double x, double y, double z, double s)
@@ -225,7 +270,13 @@ void display()
       double Ey = +dim * Sin(ph);
       double Ez = +dim * Cos(th) * Cos(ph);
       
-      gluLookAt(Ex, Ey, Ez, 0, 0, 0, 0, Cos(ph), 0);
+      //printf("Ex = %f, Ey = %f, Ez = %f\n", Ex, Ey, Ez);
+      
+      //double Ex = -dim*2, Ey = 0, Ez = dim*2;
+      
+      gluLookAt(0, 2, 6,   lx, ly, lz,    0, 1, 0);
+      
+      //printf("Lx = %f, Ly = %f, Lz = %f\n", lx, ly, lz);
     }
     //  Orthogonal - set world orientation
     else
@@ -274,25 +325,29 @@ void display()
      glDisable(GL_LIGHTING);
      
     glEnable(GL_TEXTURE_2D); 
+    
+    drawSky(20);
+    
+    int i, j;
+    for(i = -5; i <= 5; i++)
+    {
+      for(j = -5; j <= 5; j++)
+      {
+        drawGroundTile(i, j);
+      }
+    }
+    
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
 
-    int i;
     for(i = 0; i < MAX_PARTICLES; i++)
     {
       drawParticle(particles[i]);
     }
-
-    //for(i = -3; i <= 3; i++)
-    //{
-      //for(j = -3; j <= 3; j++)
-      //{
-        //drawGroundTile(i, j);
-      //}
-    //}
-      
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_TEXTURE_2D);
-    glDisable(GL_BLEND);
+    
         
     /* Axis Drawing and Labeling Code
     * Credit: Prof. Schreuder */
@@ -300,14 +355,30 @@ void display()
     if(AXES_MODE == AXES_MODE_ON)
     {
       //  Draw axes in white
-      glColor3f(1,1,1);
       glBegin(GL_LINES);
-      glVertex3d(-1.5,0,0);
-      glVertex3d(1.5,0,0);
-      glVertex3d(0,-1.5,0);
-      glVertex3d(0,1.5,0);
-      glVertex3d(0,0,-1.5);
-      glVertex3d(0,0,1.5);
+      glColor3f(1, 0, 0);
+      glVertex3d(-AXES_LENGTH,0,0);
+      glVertex3d(0, 0, 0);
+      
+      glColor3f(1, 1, 1);
+      glVertex3d(0, 0, 0);
+      glVertex3d(AXES_LENGTH,0,0);
+      
+      glColor3f(1, 0, 0);
+      glVertex3d(0,-AXES_LENGTH,0);
+      glVertex3d(0, 0, 0);
+      
+      glColor3f(1, 1, 1);
+      glVertex3d(0, 0, 0);
+      glVertex3d(0, AXES_LENGTH,0);
+      
+      glColor3f(1, 0, 0);
+      glVertex3d(0,0,-AXES_LENGTH);
+      glVertex3d(0, 0, 0);
+      
+      glColor3f(1, 1, 1);
+      glVertex3d(0, 0, 0);
+      glVertex3d(0,0,AXES_LENGTH);
       glEnd();
       //  Label axes
       glRasterPos3d(1.5,0,0);
@@ -370,10 +441,29 @@ void reshape(int width, int height)
 void motion(int x, int y)
 {
   
-  if(x - mouseX > 0) th++;
-  if(x - mouseX < 0) th--;
-  if(y - mouseY > 0) ph++;
-  if(y - mouseY < 0) ph--;
+  if(x - mouseX > 0)
+  {
+     th++;
+     lx += 0.1;
+     lz += 0.1;
+  }
+  if(x - mouseX < 0)
+  {
+     th--;
+     lx -= 0.1;
+     lz -= 0.1;
+  }
+  
+  if(y - mouseY > 0)
+  {
+    ly -= 0.1;
+    ph++;
+  }
+  if(y - mouseY < 0)
+  {
+     ph--;
+     ly += 0.1;
+  }
 
   th = th % 360;
   ph = ph % 360;
@@ -512,10 +602,20 @@ void key(unsigned char ch, int x, int y)
 void special(int key, int x, int y)
 {
    //  Right arrow key - increase azimuth by 5 degrees
-   if(key == GLUT_KEY_RIGHT)     th += 5;
+   if(key == GLUT_KEY_RIGHT)
+   {
+          th += 5;
+          lx += 0.5;
+          lz += 0.5;
+   }
    
    //  Left arrow key - decrease azimuth by 5 degrees
-   else if(key == GLUT_KEY_LEFT) th -= 5;
+   else if(key == GLUT_KEY_LEFT)
+   {
+      th -= 5;
+      lx -= 0.5;
+      lz -= 0.5;
+   }
    
    //  Up arrow key - increase elevation by 5 degrees
    else if(key == GLUT_KEY_UP)   ph += 5;

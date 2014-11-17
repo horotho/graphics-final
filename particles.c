@@ -5,7 +5,6 @@
 #define INITIAL_SCALE 2
 #define END_SCALE 1
 
-
 float getRandom()
 {
   return (float)rand()/(float)RAND_MAX;
@@ -65,8 +64,6 @@ void updateParticles(particle* parray, double time, double timestep)
     p->current_alpha = p->initial_alpha - p->end_alpha*percent;
     p->scale = pg.initial_scale - pg.end_scale*percent;
     
-    //printf("Going from %d to %d.\n", p->initial_alpha, p->end_alpha);
-    
     p->current_color.r = pg.initial_color.r + percent * (pg.end_color.r - pg.initial_color.r);
     p->current_color.g = pg.initial_color.g + percent * (pg.end_color.g - pg.initial_color.g);
     p->current_color.b = pg.initial_color.b + percent * (pg.end_color.b - pg.initial_color.b);
@@ -80,8 +77,6 @@ void updateParticles(particle* parray, double time, double timestep)
 
 void onParticleDeathSmoke(particle *p, double time)
 {
-  
-  //p->vx = getRandom() - 0.5;
   
   p->x = getRandom();
   p->y = getRandom() - 0.5;
