@@ -1,7 +1,7 @@
 #ifndef _PARTICLES_H
 #define _PARTICLES_H
 
-#define MAX_PARTICLES 500
+#define MAX_PARTICLES 1000
 
 typedef struct color color;
 typedef struct pgroup pgroup;

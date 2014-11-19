@@ -12,6 +12,8 @@
 #define PI 3.14159265
 #define NUM_TEXTURES 4
 #define AXES_LENGTH 3
+#define ACos(th) acos(th*180/3.14159265)
+#define ASin(th) asin(th*180/3.14159265)
 
 enum
 {
@@ -48,8 +50,9 @@ double ambient = 0.15;
 double specular = 0.5;
 double diffuse = 0.8;
 
-double x = 0, y = 2, z = 6;
+double x = 0, y = 0, z = 6;
 double lx = 0, ly = 0, lz = -1;
+double pangle = 0;
 
 double prevTime;
 int mouseX = 0, mouseY = 0;
@@ -94,7 +97,7 @@ static void setProjection()
    
    if (MODE == MODE_PERSPECTIVE)
    {
-      gluPerspective(fov, asp, dim/8, 8 * dim);
+      gluPerspective(fov, asp, dim/20, 20 * dim);
    }
    else
    {
@@ -116,10 +119,10 @@ void drawSky(double d)
   glColor4ub(255, 255, 255, 255);
   glBegin(GL_QUADS);
     // Top
-    glTexCoord2f(0.25, 0.30); glVertex3f(-d, +d, -d);
-    glTexCoord2f(0.25, 0.00); glVertex3f(-d, +d, +d);
-    glTexCoord2f(0.50, 0.00); glVertex3f(+d, +d, +d);
-    glTexCoord2f(0.50, 0.30); glVertex3f(+d, +d, -d);
+    glTexCoord2f(0.25, 0.30); glVertex3f(+d, +d, -d);
+    glTexCoord2f(0.25, 0.00); glVertex3f(+d, +d, +d);
+    glTexCoord2f(0.50, 0.00); glVertex3f(-d, +d, +d);
+    glTexCoord2f(0.50, 0.30); glVertex3f(-d, +d, -d);
     
     // Front
     glTexCoord2f(0.25, 0.30); glVertex3f(-d, +d, -d);
@@ -164,16 +167,15 @@ void drawHouse()
   
 }
 
-
 void drawParticle(particle p)
 {
   glDepthMask(GL_FALSE);
-  
+  glPushMatrix();
   if(prev_texture != particle_textures[p.texture_id])
     glBindTexture(GL_TEXTURE_2D, particle_textures[p.texture_id]);
     
   glColor4ub(p.current_color.r, p.current_color.g, p.current_color.b, p.current_alpha);
-  
+  glRotated(pangle, 0, 1, 0);
   glBegin(GL_QUADS);
     glNormal3f(0, 0, 1);
     glTexCoord2f(0.10, 0.10);  glVertex3f(p.x, p.y, p.z);
@@ -182,6 +184,7 @@ void drawParticle(particle p)
     glTexCoord2f(0.10, 0.90);  glVertex3f(p.x + p.scale, p.y, p.z);
   glEnd();
   
+  glPopMatrix();
   prev_texture = particle_textures[p.texture_id];
 }
 
@@ -193,7 +196,7 @@ void drawGroundTile(double x, double z)
   if(prev_texture != ground_textures[0])
     glBindTexture(GL_TEXTURE_2D, ground_textures[0]);
     
-  glTranslatef(x, -5, z);
+  glTranslatef(x, -10, z);
   
   glColor4ub(255, 255, 255, 255);
   glBegin(GL_QUADS);
@@ -291,6 +294,8 @@ void display()
       //double Ex = -dim*2, Ey = 0, Ez = dim*2;
       gluLookAt(x, y, z,   x + lx, y + ly, z + lz,    0, 1, 0);
       
+      //printf("x = %0.3f, z = %0.3f, angle = %0.3f\n", x, z, atan2(x, z) * (180/PI));
+      
       //printf("Lx = %.3f, Ly = %.3f, Lz = %.3f\n", lx, ly, lz);
       //printf("x = %0.3f, y = %0.3f, z = %0.3f\n", x, y, z);
     }
@@ -342,12 +347,14 @@ void display()
      
     glEnable(GL_TEXTURE_2D); 
     
-    drawSky(4 * dim);
+    double size = 5 * dim;
+    
+    drawSky(size);
     
     int i, j;
-    for(i = -4*dim; i <= 4*dim; i++)
+    for(i = -size; i <= size; i++)
     {
-      for(j = -4*dim; j <= 4*dim; j++)
+      for(j = -size; j <= size; j++)
       {
         drawGroundTile(i, j);
       }
@@ -363,6 +370,7 @@ void display()
     
     glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_TEXTURE_2D);
+    
     
         
     /* Axis Drawing and Labeling Code
@@ -499,7 +507,7 @@ void idle()
    prevTime = time;
    
    t = fmod(pow(2.0, speed_up) * time, 360.0);
-   
+   pangle = atan2(x, z) * (180/PI);
    updateParticles(particles, time, timestep);
    
    //  Tell GLUT it is necessary to redisplay the scene
@@ -537,13 +545,15 @@ void mouse(int button, int state, int x, int y)
  */
 void key(unsigned char ch, int xx, int yy)
 {
+  
   switch(ch)
   {
     case 'q':
       MODE = !MODE;
       break;
     case 'a':
-      AXES_MODE = !AXES_MODE;
+      x -= lx * 0.2;
+      //AXES_MODE = !AXES_MODE;
       break;
     case 'w':
       //LIGHTING_MODE = !LIGHTING_MODE;
@@ -553,6 +563,9 @@ void key(unsigned char ch, int xx, int yy)
     case 's':
       x -= lx * 0.2;
       z -= lz * 0.2;
+      break;
+    case 'd':
+      x += lx * 0.2;
       break;
     case '+':
       if(MODE == MODE_PERSPECTIVE)
