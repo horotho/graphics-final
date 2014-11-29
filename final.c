@@ -50,7 +50,7 @@ double ambient = 0.15;
 double specular = 0.5;
 double diffuse = 0.8;
 
-double x = 0, y = 0, z = 6;
+double x = 0, y = -9.5, z = 6;
 double lx = 0, ly = 0, lz = -1;
 double pangle = 0;
 
@@ -119,10 +119,10 @@ void drawSky(double d)
   glColor4ub(255, 255, 255, 255);
   glBegin(GL_QUADS);
     // Top
-    glTexCoord2f(0.25, 0.30); glVertex3f(+d, +d, -d);
-    glTexCoord2f(0.25, 0.00); glVertex3f(+d, +d, +d);
-    glTexCoord2f(0.50, 0.00); glVertex3f(-d, +d, +d);
-    glTexCoord2f(0.50, 0.30); glVertex3f(-d, +d, -d);
+    glTexCoord2f(0.50, 0.30); glVertex3f(+d, +d, -d);
+    glTexCoord2f(0.50, 0.00); glVertex3f(+d, +d, +d);
+    glTexCoord2f(0.25, 0.00); glVertex3f(-d, +d, +d);
+    glTexCoord2f(0.25, 0.30); glVertex3f(-d, +d, -d);
     
     // Front
     glTexCoord2f(0.25, 0.30); glVertex3f(-d, +d, -d);
@@ -176,12 +176,13 @@ void drawParticle(particle p)
     
   glColor4ub(p.current_color.r, p.current_color.g, p.current_color.b, p.current_alpha);
   glRotated(pangle, 0, 1, 0);
+  
   glBegin(GL_QUADS);
     glNormal3f(0, 0, 1);
     glTexCoord2f(0.10, 0.10);  glVertex3f(p.x, p.y, p.z);
-    glTexCoord2f(0.90, 0.10);  glVertex3f(p.x, p.y + p.scale, p.z);
-    glTexCoord2f(0.90, 0.90);  glVertex3f(p.x + p.scale, p.y + p.scale, p.z);
-    glTexCoord2f(0.10, 0.90);  glVertex3f(p.x + p.scale, p.y, p.z);
+    glTexCoord2f(0.90, 0.10);  glVertex3f(p.x, p.y + p.current_scale, p.z);
+    glTexCoord2f(0.90, 0.90);  glVertex3f(p.x + p.current_scale, p.y + p.current_scale, p.z);
+    glTexCoord2f(0.10, 0.90);  glVertex3f(p.x + p.current_scale, p.y, p.z);
   glEnd();
   
   glPopMatrix();
@@ -196,7 +197,7 @@ void drawGroundTile(double x, double z)
   if(prev_texture != ground_textures[0])
     glBindTexture(GL_TEXTURE_2D, ground_textures[0]);
     
-  glTranslatef(x, -10, z);
+  glTranslatef(x, -11, z);
   
   glColor4ub(255, 255, 255, 255);
   glBegin(GL_QUADS);

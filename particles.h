@@ -12,12 +12,6 @@ struct color
   int r, g, b;
 };
 
-struct pgroup
-{
-  float initial_scale, end_scale;
-  color initial_color, end_color;
-};
-
 struct particle
 {
   unsigned int initial_alpha, current_alpha, end_alpha;
@@ -25,12 +19,10 @@ struct particle
   double life_time, spawn_time;
   float x, y, z;
   float vx, vy, vz;
-  float scale;
-  color current_color;
-  pgroup group;
+  float initial_scale, end_scale, current_scale;
+  color initial_color, end_color, current_color;
   void (*deathptr)(particle *p, double time);
 };
-
 
 void initParticles(particle* parray);
 void updateParticles(particle* parray, double time, double timestep);
