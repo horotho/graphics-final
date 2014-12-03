@@ -12,8 +12,6 @@
 #define PI 3.14159265
 #define NUM_TEXTURES 4
 #define AXES_LENGTH 3
-#define ACos(th) acos(th*180/3.14159265)
-#define ASin(th) asin(th*180/3.14159265)
 
 enum
 {
@@ -31,8 +29,8 @@ enum {LIGHTING_ON = 1, LIGHTING_OFF = 0};
 char* text[] = {"Orthogonal", "Perspective"};
 
 int MODE = MODE_PERSPECTIVE;
-int AXES_MODE = AXES_MODE_OFF;
-int LIGHTING_MODE = LIGHTING_OFF;
+int AXES_MODE = AXES_MODE_ON;
+int LIGHTING_MODE = LIGHTING_ON;
 
 int th = 0;        // Azimuth of view angle
 int ph = 0;        // Elevation of view angle
@@ -51,7 +49,7 @@ double specular = 0.5;
 double diffuse = 0.8;
 
 double x = 0, y = -9.5, z = 6;
-double lx = 0, ly = 0, lz = -1;
+double lx = 0, ly = 0, lz = -1, px = 1, pz = 0;
 double pangle = 0;
 
 double prevTime;
@@ -62,6 +60,7 @@ unsigned int cone_textures[1];
 unsigned int ground_textures[1];
 unsigned int sky_textures[1];
 unsigned int prev_texture;
+unsigned int logs;
 
 particle particles[MAX_PARTICLES];
 
@@ -82,6 +81,8 @@ void initTextures()
   }
   
   sky_textures[0] = loadPng("sky.png");
+  
+  logs = LoadOBJ("wood_logs.obj");
 }
 
 /*
@@ -164,52 +165,129 @@ void drawSky(double d)
 
 void drawHouse()
 {
-  
-}
-
-void drawParticle(particle p)
-{
-  glDepthMask(GL_FALSE);
   glPushMatrix();
-  if(prev_texture != particle_textures[p.texture_id])
-    glBindTexture(GL_TEXTURE_2D, particle_textures[p.texture_id]);
-    
-  glColor4ub(p.current_color.r, p.current_color.g, p.current_color.b, p.current_alpha);
-  glRotated(pangle, 0, 1, 0);
+  glTranslatef(-5, -11, 0);
+  glScalef(5, 5, 5);
+  glColor4ub(255, 255, 255, 255);
   
   glBegin(GL_QUADS);
-    glNormal3f(0, 0, 1);
-    glTexCoord2f(0.10, 0.10);  glVertex3f(p.x, p.y, p.z);
-    glTexCoord2f(0.90, 0.10);  glVertex3f(p.x, p.y + p.current_scale, p.z);
-    glTexCoord2f(0.90, 0.90);  glVertex3f(p.x + p.current_scale, p.y + p.current_scale, p.z);
-    glTexCoord2f(0.10, 0.90);  glVertex3f(p.x + p.current_scale, p.y, p.z);
+    glVertex3f(0, 0, 0);
+    glVertex3f(1, 0, 0);
+    glVertex3f(1, 1, 0);
+    glVertex3f(0, 1, 0);
   glEnd();
   
   glPopMatrix();
-  prev_texture = particle_textures[p.texture_id];
 }
 
-void drawGroundTile(double x, double z)
+void drawLogs()
 {
-  glDepthMask(GL_TRUE);
+  glEnable(GL_DEPTH_TEST);
   glPushMatrix();
-  
-  if(prev_texture != ground_textures[0])
-    glBindTexture(GL_TEXTURE_2D, ground_textures[0]);
-    
-  glTranslatef(x, -11, z);
   
   glColor4ub(255, 255, 255, 255);
-  glBegin(GL_QUADS);
-    glTexCoord2d(0, 0); glVertex3f(0, 0, 0);
-    glTexCoord2d(1, 0); glVertex3f(1, 0, 0);
-    glTexCoord2d(1, 1); glVertex3f(1, 0, 1);
-    glTexCoord2d(0, 1); glVertex3f(0, 0, 1);
-  glEnd();
+  glTranslatef(-0.5, -11, -0.5);
+  glScalef(0.02, 0.02, 0.02);
+  glRotatef(-30, 0, 1, 0);
+  glCallList(logs);
   
   glPopMatrix();
   
-  prev_texture = ground_textures[0];
+  glPushMatrix();
+  
+  glColor4ub(255, 255, 255, 255);
+  glTranslatef(0.25, -11, -0.25);
+  glScalef(0.02, 0.02, 0.02);
+  glRotatef(30, 0, 1, 0);
+  glCallList(logs);
+  
+  glPopMatrix();
+  
+  glPushMatrix();
+  
+  glColor4ub(255, 255, 255, 255);
+  glTranslatef(0, -11, 0.5);
+  glScalef(0.02, 0.02, 0.02);
+  glRotatef(90, 0, 1, 0);
+  glCallList(logs);
+  
+  glPopMatrix();
+}
+
+void drawParticles()
+{
+  glEnable(GL_BLEND);
+  glEnable(GL_TEXTURE_2D);
+  glEnable(GL_POINT_SPRITE);
+  glDepthMask(0);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+   
+  int i;
+  for(i = 0; i < MAX_PARTICLES; i++)
+  {
+    particle p = particles[i];
+    
+    if(prev_texture != particle_textures[p.texture_id])
+      glBindTexture(GL_TEXTURE_2D, particle_textures[p.texture_id]);
+    
+    float emit[] = {p.current_color.r, p.current_color.g, p.current_color.b, p.current_alpha};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, emit);
+      
+    glColor4ub(p.current_color.r, p.current_color.g, p.current_color.b, p.current_alpha);
+    
+    double rx = p.x * Cos(pangle) + p.z * Sin(pangle);
+    double rx2 = (p.x + p.current_scale) * Cos(pangle) + p.z * Sin(pangle);
+    double rz = p.z * Cos(pangle) - p.x * Sin(pangle);
+    double rz2 = p.z * Cos(pangle) - (p.x + p.current_scale) * Sin(pangle);
+    
+    glBegin(GL_QUADS);
+      glNormal3f(0, 0, 1);
+      glTexCoord2f(0.10, 0.10);  glVertex3f(rx, p.y, rz);
+      glTexCoord2f(0.90, 0.10);  glVertex3f(rx, p.y + p.current_scale, rz);
+      glTexCoord2f(0.90, 0.90);  glVertex3f(rx2, p.y + p.current_scale, rz2);
+      glTexCoord2f(0.10, 0.90);  glVertex3f(rx2, p.y, rz2);
+    glEnd();
+    
+    //glPopMatrix();
+    prev_texture = particle_textures[p.texture_id];
+  }
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glDepthMask(1);
+  
+  //printf("Time to render particles: %0.0f ms\n", glutGet(GLUT_ELAPSED_TIME) - start);
+  
+}
+
+void drawGround()
+{
+  double size = 5 * dim;
+  int i, j;
+  for(i = -size; i <= size; i++)
+  {
+    for(j = -size; j <= size; j++)
+    {
+      glPushMatrix();
+  
+      if(prev_texture != ground_textures[0])
+        glBindTexture(GL_TEXTURE_2D, ground_textures[0]);
+        
+      glTranslated(i, -11, j);
+      
+      //glColor4ub(255, 255, 255, 255);
+      glBegin(GL_QUADS);
+        glTexCoord2d(0, 0); glVertex3f(0, 0, 0);
+        glTexCoord2d(1, 0); glVertex3f(1, 0, 0);
+        glTexCoord2d(1, 1); glVertex3f(1, 0, 1);
+        glTexCoord2d(0, 1); glVertex3f(0, 0, 1);
+      glEnd();
+      
+      glPopMatrix();
+      
+      prev_texture = ground_textures[0];
+    }
+  }
+ 
 }
 
 void drawSourcePrism(double x, double y, double z, double s)
@@ -285,20 +363,10 @@ void display()
     // Perspective - set eye position
     if (MODE == MODE_PERSPECTIVE)
     {
-      // Cross products galore!
-      //double Ex = -dim * Sin(th) * Cos(ph);
-      //double Ey = +dim * Sin(ph);
-      //double Ez = +dim * Cos(th) * Cos(ph);
-      //gluLookAt(Ex, Ey, Ez, 0, 0, 0, 0, 1, 0);
-      
-      //printf("Ex = %f, Ey = %f, Ez = %f\n", Ex, Ey, Ez);
-      //double Ex = -dim*2, Ey = 0, Ez = dim*2;
       gluLookAt(x, y, z,   x + lx, y + ly, z + lz,    0, 1, 0);
       
-      //printf("x = %0.3f, z = %0.3f, angle = %0.3f\n", x, z, atan2(x, z) * (180/PI));
-      
-      //printf("Lx = %.3f, Ly = %.3f, Lz = %.3f\n", lx, ly, lz);
-      //printf("x = %0.3f, y = %0.3f, z = %0.3f\n", x, y, z);
+      //printf("lx = %0.3f, ly = %0.3f, lz = %0.3f\n", lx, ly, lz);
+      //printf("px = %0.0f, pz = %0.0f\n", px, pz);
     }
     //  Orthogonal - set world orientation
     else
@@ -346,33 +414,22 @@ void display()
    else
      glDisable(GL_LIGHTING);
      
-    glEnable(GL_TEXTURE_2D); 
-    
     double size = 5 * dim;
     
+    glDisable(GL_BLEND);
+    // Draw the skybox
     drawSky(size);
     
-    int i, j;
-    for(i = -size; i <= size; i++)
-    {
-      for(j = -size; j <= size; j++)
-      {
-        drawGroundTile(i, j);
-      }
-    }
+    // Draw the ground
+    drawGround();
     
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
-
-    for(i = 0; i < MAX_PARTICLES; i++)
-    {
-      drawParticle(particles[i]);
-    }
+     // Draw the firepit logs
+    drawLogs();
     
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glDisable(GL_TEXTURE_2D);
+     // Draw all of the fire particles
+    drawParticles();
     
-    
+    //drawHouse();
         
     /* Axis Drawing and Labeling Code
     * Credit: Prof. Schreuder */
@@ -380,6 +437,7 @@ void display()
     if(AXES_MODE == AXES_MODE_ON)
     {
       //  Draw axes in white
+      glTranslatef(0, -11, 0);
       glLineWidth(2);
       glBegin(GL_LINES);
       glColor3f(1, 0, 0);
@@ -492,6 +550,9 @@ void motion(int x, int y)
   
   lx = Sin(th);
   lz = -Cos(th);
+  
+  px = Sin(th + 90);
+  pz = -Cos(th + 90);
 
   mouseX = x;
   mouseY = y;
@@ -552,8 +613,12 @@ void key(unsigned char ch, int xx, int yy)
     case 'q':
       MODE = !MODE;
       break;
+    case 'z':
+      AXES_MODE = !AXES_MODE;
+      break;
     case 'a':
-      x -= lx * 0.2;
+      x -= px * 0.2;
+      z -= pz * 0.2;
       //AXES_MODE = !AXES_MODE;
       break;
     case 'w':
@@ -566,7 +631,11 @@ void key(unsigned char ch, int xx, int yy)
       z -= lz * 0.2;
       break;
     case 'd':
-      x += lx * 0.2;
+      x += px * 0.2;
+      z += pz * 0.2;
+      break;
+    case 'x':
+      LIGHTING_MODE = !LIGHTING_MODE;
       break;
     case '+':
       if(MODE == MODE_PERSPECTIVE)
@@ -575,52 +644,6 @@ void key(unsigned char ch, int xx, int yy)
     case '-':
       if(MODE == MODE_PERSPECTIVE)
         fov = fov > 1 ? fov - 1 : 1;
-      break;
-    case 't':
-      speed_up++;
-      break;
-    case 'g':
-      speed_up--;
-      break;
-    case 'r':
-      elevation += 0.05;
-      if(elevation > 1.8) elevation = 1.8;
-      break;
-    case 'f':
-      elevation -= 0.05;
-      if(elevation < -2) elevation = -2;
-      break;
-    case 'y':
-      ambient += 0.01;
-      if(ambient > 1.0) ambient = 1.0;
-      break;
-    case 'h':
-      ambient -= 0.01;
-      if(ambient < 0.0) ambient = 0.0;
-      break;
-    case 'u':
-      diffuse += 0.01;
-      if(diffuse > 1.0) diffuse = 1.0;
-      break;
-    case 'j':
-      diffuse -= 0.01;
-      if(diffuse < 0.0) diffuse = 0.0;
-      break;
-    case 'i':
-      specular += 0.01;
-      if(specular > 1.0) specular = 1.0;
-      break;
-    case 'k':
-      specular -= 0.01;
-      if(specular < 0.0) specular = 0.0;
-      break;
-    case 'o':
-      distance += 0.05;
-      if(distance > 8) distance = 8;
-      break;
-    case 'l':
-      distance -= 0.05;
-      if(distance < 0 ) distance = 0;
       break;
     default:
       break;
@@ -701,6 +724,8 @@ int main(int argc, char *argv[])
   
   initTextures();
   initParticles(particles);
+  
+  glEnable(GL_DEPTH_TEST); 
   
   glutMainLoop();
   

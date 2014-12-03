@@ -2,9 +2,11 @@
 #include "CSCIx229.h"
 #include "time.h"
 
-#define INITIAL_SCALE 1
+#define INITIAL_SCALE 1.25
 #define END_SCALE 0.5
-#define INITIAL_Y -10
+#define INITIAL_Y -10.8
+#define FLAME_INITIAL_COLOR (color) {200, 0, 0}
+#define PI 3.1415
 
 float getRandom()
 {
@@ -25,11 +27,11 @@ void initParticles(particle* parray)
   {
     particle* p = &parray[i];
     
-    p->x = 0;
+    p->x = -0.5;
     p->y = INITIAL_Y;
-    p->z = 0;
+    p->z = -0.5;
     
-    //p->vx = getRandom() - 0.5;
+    ///p->vx = getRandom() - 0.5;
     p->vy = getRandom() + 1;
     p->vz = getRandom() - 0.5;
     
@@ -43,7 +45,7 @@ void initParticles(particle* parray)
     p->current_scale = p->initial_scale;
     p->end_scale = END_SCALE;
     
-    p->initial_color = (color) {200, 0, 0};
+    p->initial_color = FLAME_INITIAL_COLOR;
     p->current_color = p->initial_color;
     p->end_color = (color) {255, 255, 255};
     
@@ -64,8 +66,10 @@ void updateParticles(particle* parray, double time, double timestep)
     if(percent > 1) percent = 1;
     
     p->x += p->vx * timestep;
+    //p->x = sin(PI*percent);
     p->y += p->vy * timestep;
     p->z += p->vz * timestep;
+    //p->z = cos(PI*percent);
     
     p->current_alpha = (int) lerp(p->initial_alpha, p->end_alpha, percent);
     p->current_scale = lerp(p->initial_scale, p->end_scale, percent);
@@ -83,14 +87,14 @@ void updateParticles(particle* parray, double time, double timestep)
 
 void onParticleDeathSmoke(particle *p, double time)
 {
-  p->x = getRandom();
+  p->x = 0.5*getRandom() - 0.45;
   p->y = INITIAL_Y + getRandom() - 0.5;
-  p->z = getRandom();
+  p->z = 0.5*getRandom() - 0.45;
   
   p->vy = getRandom() + 1;
   
   p->texture_id = 0;
-  p->life_time = 2;
+  p->life_time = 1.5;
   p->spawn_time = time;
   
   p->initial_alpha = 255;
@@ -100,7 +104,7 @@ void onParticleDeathSmoke(particle *p, double time)
   p->end_scale = END_SCALE;
   p->current_scale = p->initial_scale;
   
-  p->initial_color = (color) {200, 0, 0};
+  p->initial_color = FLAME_INITIAL_COLOR;
   p->end_color = (color) {255, 255, 255};
   p->current_color = p->initial_color;
   
@@ -124,7 +128,7 @@ void onParticleDeathFlame(particle *p, double time)
   p->end_color = (color) {255, 255, 255};
   p->current_color = p->initial_color;
   
-  p->initial_alpha = 100;
+  p->initial_alpha = 75;
   p->end_alpha = 0;
   
   p->deathptr = &onParticleDeathSmoke;
