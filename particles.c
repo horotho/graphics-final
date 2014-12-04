@@ -2,10 +2,10 @@
 #include "CSCIx229.h"
 #include "time.h"
 
-#define INITIAL_SCALE 1.25
-#define END_SCALE 0.5
+#define INITIAL_SCALE 0.75
+#define END_SCALE 0.45
 #define INITIAL_Y -10.8
-#define FLAME_INITIAL_COLOR (color) {200, 0, 0}
+#define FLAME_INITIAL_COLOR (color) {225, 0, 0}
 #define PI 3.1415
 
 float getRandom()
@@ -27,11 +27,11 @@ void initParticles(particle* parray)
   {
     particle* p = &parray[i];
     
-    p->x = -0.5;
+    p->x = 0;
     p->y = INITIAL_Y;
-    p->z = -0.5;
+    p->z = 0;
     
-    ///p->vx = getRandom() - 0.5;
+    //p->vx = getRandom() - 0.5;
     p->vy = getRandom() + 1;
     p->vz = getRandom() - 0.5;
     
@@ -39,7 +39,7 @@ void initParticles(particle* parray)
     p->end_alpha = p->initial_alpha/2;
     
     p->life_time = 0;
-    p->spawn_time = (double) 20*i/MAX_PARTICLES;
+    p->spawn_time = (double) 15*i/MAX_PARTICLES;
     
     p->initial_scale = INITIAL_SCALE;
     p->current_scale = p->initial_scale;
@@ -66,7 +66,7 @@ void updateParticles(particle* parray, double time, double timestep)
     if(percent > 1) percent = 1;
     
     p->x += p->vx * timestep;
-    //p->x = sin(PI*percent);
+    //p->x = 1/tan(PI*percent);
     p->y += p->vy * timestep;
     p->z += p->vz * timestep;
     //p->z = cos(PI*percent);
@@ -117,7 +117,7 @@ void onParticleDeathFlame(particle *p, double time)
   p->vy *= 2;
   
   p->texture_id = 1;
-  p->life_time = 2;
+  p->life_time = 1.5;
   p->spawn_time = time;
   
   p->initial_scale = 0.75;

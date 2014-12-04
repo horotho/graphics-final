@@ -1,8 +1,5 @@
 /* 
- * I used parts of the CSCI libary, 
- * and compiled and linked whatever I needed.
- * 
- * Credit: Prof. Schreuder
+ * All CSCIx229 library functions are credited to Prof. Schreuder.
  */
 
 #include "CSCIx229.h"
@@ -35,18 +32,15 @@ int LIGHTING_MODE = LIGHTING_ON;
 int th = 0;        // Azimuth of view angle
 int ph = 0;        // Elevation of view angle
 int fov = 70;       // Field of view angle in degrees (y direction)
-int speed_up = 4;     // The factor by which the light movement is sped up
 int prism_index = 0;
 
+double elapsed_time = 0.0;
 double dim = 6.0;   // Dimension of orthogonal box
 double asp = 1;     // Aspect ratio of the window
-double t = 0;       // The current time step in light movement
-double elevation = 1; // The current light elevation
-double distance = 2; // Light distance away from the origin
 
-double ambient = 0.15;
+double ambient = 0.1;
 double specular = 0.5;
-double diffuse = 0.8;
+double diffuse = 0.75;
 
 double x = 0, y = -9.5, z = 6;
 double lx = 0, ly = 0, lz = -1, px = 1, pz = 0;
@@ -56,8 +50,7 @@ double prevTime;
 int mouseX = 0, mouseY = 0;
 
 unsigned int particle_textures[5];
-unsigned int cone_textures[1];
-unsigned int ground_textures[1];
+unsigned int misc_tex[2];
 unsigned int sky_textures[1];
 unsigned int prev_texture;
 unsigned int logs;
@@ -67,20 +60,20 @@ particle particles[MAX_PARTICLES];
 void initTextures()
 {
   int i;
-  char* pnames[] = {"flame.png", "smoke.png", "sparkle.png", "sparkle2.png"};
-  char* gnames[] = {"ground.png"};
+  char* pnames[] = {"textures/flame.png", "textures/smoke.png", "textures/sparkle.png", "textures/sparkle2.png"};
+  char* gnames[] = {"textures/ground.png", "textures/house_front.png"};
   
   for(i = 0; i < NUM_TEXTURES; i++)
   {
     particle_textures[i] = loadPng(pnames[i]);
   }
   
-  for(i = 0; i < 1; i++)
+  for(i = 0; i < 2; i++)
   {
-    ground_textures[i] = loadPng(gnames[i]);
+    misc_tex[i] = loadPng(gnames[i]);
   }
   
-  sky_textures[0] = loadPng("sky.png");
+  sky_textures[0] = loadPng("textures/sky.png");
   
   logs = LoadOBJ("wood_logs.obj");
 }
@@ -120,30 +113,35 @@ void drawSky(double d)
   glColor4ub(255, 255, 255, 255);
   glBegin(GL_QUADS);
     // Top
+    glNormal3f(0, 1, 0);
     glTexCoord2f(0.50, 0.30); glVertex3f(+d, +d, -d);
     glTexCoord2f(0.50, 0.00); glVertex3f(+d, +d, +d);
     glTexCoord2f(0.25, 0.00); glVertex3f(-d, +d, +d);
     glTexCoord2f(0.25, 0.30); glVertex3f(-d, +d, -d);
     
     // Front
+    glNormal3f(0, 0, -1);
     glTexCoord2f(0.25, 0.30); glVertex3f(-d, +d, -d);
     glTexCoord2f(0.25, 0.50); glVertex3f(-d, -d, -d);
     glTexCoord2f(0.50, 0.50); glVertex3f(+d, -d, -d);
     glTexCoord2f(0.50, 0.30); glVertex3f(+d, +d, -d);
     
     // Back
+    glNormal3f(0, 0, 1);
     glTexCoord2f(0.75, 0.30); glVertex3f(+d, +d, +d);
     glTexCoord2f(1.00, 0.30); glVertex3f(-d, +d, +d);
     glTexCoord2f(1.00, 0.50); glVertex3f(-d, -d, +d);
     glTexCoord2f(0.75, 0.50); glVertex3f(+d, -d, +d);
     
-    //Left 
+    //Left
+    glNormal3f(-1, 0, 0); 
     glTexCoord2f(0.25, 0.50); glVertex3f(-d, -d, -d);
     glTexCoord2f(0.00, 0.50); glVertex3f(-d, -d, +d);
     glTexCoord2f(0.00, 0.30); glVertex3f(-d, +d, +d);
     glTexCoord2f(0.25, 0.30); glVertex3f(-d, +d, -d);
     
     // Right
+    glNormal3f(1, 0, 0);
     glTexCoord2f(0.50, 0.50); glVertex3f(+d, -d, -d);
     glTexCoord2f(0.75, 0.50); glVertex3f(+d, -d, +d);
     glTexCoord2f(0.75, 0.30); glVertex3f(+d, +d, +d);
@@ -165,19 +163,31 @@ void drawSky(double d)
 
 void drawHouse()
 {
+  glDisable(GL_BLEND);
+  glEnable(GL_CULL_FACE);
   glPushMatrix();
+  
+  if(prev_texture != misc_tex[1])
+    glBindTexture(GL_TEXTURE_2D, misc_tex[1]);
+  
   glTranslatef(-5, -11, 0);
   glScalef(5, 5, 5);
+  glRotatef(90, 0, 1, 0);
   glColor4ub(255, 255, 255, 255);
   
   glBegin(GL_QUADS);
-    glVertex3f(0, 0, 0);
-    glVertex3f(1, 0, 0);
-    glVertex3f(1, 1, 0);
-    glVertex3f(0, 1, 0);
+   
+    glNormal3f(1, 0, 0);
+    glTexCoord2f(0, 1); glVertex3f(0, 0, 0);
+    glTexCoord2f(1, 1); glVertex3f(1, 0, 0);
+    glTexCoord2f(1, 0); glVertex3f(1, 1, 0);
+    glTexCoord2f(0, 0); glVertex3f(0, 1, 0);
   glEnd();
   
   glPopMatrix();
+  
+  glDisable(GL_CULL_FACE);
+  prev_texture = misc_tex[1];
 }
 
 void drawLogs()
@@ -221,6 +231,9 @@ void drawParticles()
   glEnable(GL_POINT_SPRITE);
   glDepthMask(0);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
+  float shiny[] = {16};
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shiny);
    
   int i;
   for(i = 0; i < MAX_PARTICLES; i++)
@@ -230,9 +243,10 @@ void drawParticles()
     if(prev_texture != particle_textures[p.texture_id])
       glBindTexture(GL_TEXTURE_2D, particle_textures[p.texture_id]);
     
-    float emit[] = {p.current_color.r, p.current_color.g, p.current_color.b, p.current_alpha};
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, emit);
-      
+    //float ambd[] = {p.current_color.r/255, p.current_color.g/255, p.current_color.b/255, 1};
+    float ambd[] = {1,1,1,1};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambd);
+    
     glColor4ub(p.current_color.r, p.current_color.g, p.current_color.b, p.current_alpha);
     
     double rx = p.x * Cos(pangle) + p.z * Sin(pangle);
@@ -241,7 +255,7 @@ void drawParticles()
     double rz2 = p.z * Cos(pangle) - (p.x + p.current_scale) * Sin(pangle);
     
     glBegin(GL_QUADS);
-      glNormal3f(0, 0, 1);
+      glNormal3f(Cos(pangle), 0, -Sin(pangle));
       glTexCoord2f(0.10, 0.10);  glVertex3f(rx, p.y, rz);
       glTexCoord2f(0.90, 0.10);  glVertex3f(rx, p.y + p.current_scale, rz);
       glTexCoord2f(0.90, 0.90);  glVertex3f(rx2, p.y + p.current_scale, rz2);
@@ -269,13 +283,14 @@ void drawGround()
     {
       glPushMatrix();
   
-      if(prev_texture != ground_textures[0])
-        glBindTexture(GL_TEXTURE_2D, ground_textures[0]);
+      if(prev_texture != misc_tex[0])
+        glBindTexture(GL_TEXTURE_2D, misc_tex[0]);
         
       glTranslated(i, -11, j);
       
       //glColor4ub(255, 255, 255, 255);
       glBegin(GL_QUADS);
+        glNormal3f(0, 1, 0);
         glTexCoord2d(0, 0); glVertex3f(0, 0, 0);
         glTexCoord2d(1, 0); glVertex3f(1, 0, 0);
         glTexCoord2d(1, 1); glVertex3f(1, 0, 1);
@@ -284,7 +299,7 @@ void drawGround()
       
       glPopMatrix();
       
-      prev_texture = ground_textures[0];
+      prev_texture = misc_tex[0];
     }
   }
  
@@ -386,12 +401,14 @@ void display()
     {
       //  Translate intensity to color vectors
       float ambient_vector[]   = {ambient, ambient, ambient, 1.0};
-      float diffuse_vector[]   = {diffuse, diffuse, diffuse, 1.0};
+      float diffuse_vector[]   = {diffuse * 1.4, diffuse * 1.2, diffuse, 1.0};
       float specular_vector[]  = {specular, specular, specular, 1.0};
       //  Light position
       
-      float position_vector[] = {distance*cos(t * (PI/180)), elevation, distance*sin(t * (PI/180)), 1.0};
-      drawSourcePrism(distance*cos(t * (PI/180)), elevation, distance*sin(t * (PI/180)), 0.3);
+      //float position_vector[] = {distance*cos(t * (PI/180)), elevation, distance*sin(t * (PI/180)), 1.0};
+      //drawSourcePrism(distance*cos(t * (PI/180)), elevation, distance*sin(t * (PI/180)), 0.3);
+      
+      float position_vector[] = {Cos(pangle), -10 + 0.25 * cos(elapsed_time) * getRandom(), -Sin(pangle), 1};
       
       //  OpenGL should normalize normal vectors
       glEnable(GL_NORMALIZE);
@@ -403,7 +420,7 @@ void display()
       glEnable(GL_COLOR_MATERIAL);
       
       //  Enable light 0
-      glEnable(GL_LIGHT0);
+      glEnable(GL_LIGHT0); 
       
       //  Set ambient, diffuse, specular components and position of light 0
       glLightfv(GL_LIGHT0, GL_AMBIENT , ambient_vector);
@@ -417,19 +434,12 @@ void display()
     double size = 5 * dim;
     
     glDisable(GL_BLEND);
-    // Draw the skybox
-    drawSky(size);
     
-    // Draw the ground
-    drawGround();
-    
-     // Draw the firepit logs
-    drawLogs();
-    
-     // Draw all of the fire particles
-    drawParticles();
-    
-    //drawHouse();
+    drawSky(size); // Draw the skybox
+    drawGround(); // Draw the ground
+    drawLogs(); // Draw the firepit logs
+    drawHouse(); // Draw the house
+    drawParticles(); // Draw all of the fire particles last as they have alpha
         
     /* Axis Drawing and Labeling Code
     * Credit: Prof. Schreuder */
@@ -487,8 +497,6 @@ void display()
                  );
                  
       glWindowPos2i(5, 35);
-      Print("Light Speed = %3.3f, Light Elevation = %2.2f, Light Distance = %2.2f", 
-                  pow(2.0, speed_up), elevation, distance);
                   
       glWindowPos2i(5, 50);
       Print("Ambient = %2.2f, Diffuse = %2.2f, Specular = %2.2f",
@@ -564,14 +572,12 @@ void motion(int x, int y)
 void idle()
 {
    //  Elapsed time in seconds
-   double time = glutGet(GLUT_ELAPSED_TIME)/1000.0;
-   double timestep = time - prevTime;
-   prevTime = time;
+   elapsed_time = glutGet(GLUT_ELAPSED_TIME)/1000.0;
    
-   t = fmod(pow(2.0, speed_up) * time, 360.0);
    pangle = atan2(x, z) * (180/PI);
-   updateParticles(particles, time, timestep);
+   updateParticles(particles, elapsed_time, elapsed_time - prevTime);
    
+   prevTime = elapsed_time;
    //  Tell GLUT it is necessary to redisplay the scene
    glutPostRedisplay();
 }
@@ -619,10 +625,8 @@ void key(unsigned char ch, int xx, int yy)
     case 'a':
       x -= px * 0.2;
       z -= pz * 0.2;
-      //AXES_MODE = !AXES_MODE;
       break;
     case 'w':
-      //LIGHTING_MODE = !LIGHTING_MODE;
       x += lx * 0.2;
       z += lz * 0.2;
       break;

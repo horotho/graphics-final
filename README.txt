@@ -1,46 +1,39 @@
-Instructions:
+<--------------------Instructions-------------------------------------->
 
-Can be made using the 'make' command. Parts of the CSCI library are used,
-and only those parts are compiled and linked. I used loadtexbmp, fatal, and
-errcheck.
+Can be made using the 'make' command.
 
+<---------------------Credits------------------------------------------>
 The textures are courtesy of filterforge.com,
-https://filterforge.com/filters/12034.html.
+https://filterforge.com/filters/
+
+The object loader is borrowed from Prof. Schreuder.
+
+The wooden logs are attributed to
+Emmanuel PUYBARET / eTeks <info@eteks.com>  and
+Scopia Visual Interfaces Systems, s.l. (http://www.scopia.es)
+under the Creative Commons Attribution 3.0 Unported license.
+
+A PNG loading library called lodePng is used.
+http://lodev.org/lodepng/
+
+<----------------------Project Progress--------------------------------->
+
+Instead of going for particle shapes I decided that slightly simpler
+alpha based quads that were textured looked better. The particles have
+color and alpha that changes over time.
+
+My plans are to create and finish a house, as well as add ways for the user
+to modify the particles in whatever way they choose.
 
 <-------------------------Controls------------------------------------->
 
 Viewing Toggles:
 
 'q' : Switch between Orthographic and Perspective projection modes.
-'a' : Toggle axes.
-'w' : Toggle lighting;
-'F1' : Increase the dimension of the viewing box.
-'F2' : Decrease the dimension of the viewing box.
+'z' : Toggle axes.
+'x' : Toggle lighting;
 
-Light:
+Standard WASD movement keys are used.
+The mouse or the arrow keys can be used to direct movement.
 
-Each control comes as a set, where the top key increases the value and
-the bottom key decreases the value.
-
-'r' and 'f': Increase or decrease the light's elevation.
-'t' and 'g': Increase or decrease the speed that the light moves. Power of 2.
-'y' and 'h': Increase or decrease the ambient lighting.
-'u' and 'j': Increase or decrease the diffuse lighting.
-'i' and 'k': Increase or decrease the specular lighting.
-'o' and 'l': Increase or decrease the distance the light is from the origin.
-
-FoV:
-
-'+' : Increase FoV
-'-' : Decrease FoV
-
-Can also be done by using the scroll wheel.
-Note that FoV cannot be changed in Orthogonal Projection mode.
-
-Rotation:
-
-Can be done using the standard left, right, up and down arrow keys.
-Can also be done by clicking either the left or right mouse button
-and dragging inside the window.
-
-This assignment took about 4 hours.
+Forward movement is the in the direction of looking.
