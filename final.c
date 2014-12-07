@@ -8,6 +8,7 @@
 
 #define PI 3.14159265
 #define NUM_TEXTURES 4
+#define NUM_TREES 20
 #define AXES_LENGTH 3
 
 enum
@@ -22,12 +23,14 @@ enum
 enum {MODE_ORTHOGONAL = 0, MODE_PERSPECTIVE = 1};
 enum {AXES_MODE_OFF = 0, AXES_MODE_ON = 1};
 enum {LIGHTING_ON = 1, LIGHTING_OFF = 0};
+enum {SCENE_CAMPFIRE = 0, SCENE_WITCH = 1, SCENE_ROCKET = 2};
 
 char* text[] = {"Orthogonal", "Perspective"};
 
 int MODE = MODE_PERSPECTIVE;
 int AXES_MODE = AXES_MODE_ON;
 int LIGHTING_MODE = LIGHTING_ON;
+int SCENE_MODE = SCENE_CAMPFIRE;
 
 int th = 0;        // Azimuth of view angle
 int ph = 0;        // Elevation of view angle
@@ -38,9 +41,9 @@ double elapsed_time = 0.0;
 double dim = 6.0;   // Dimension of orthogonal box
 double asp = 1;     // Aspect ratio of the window
 
-double ambient = 0.1;
+double ambient = 0.3;
 double specular = 0.5;
-double diffuse = 0.75;
+double diffuse = 0.8;
 
 double x = 0, y = -9.5, z = 6;
 double lx = 0, ly = 0, lz = -1, px = 1, pz = 0;
@@ -50,32 +53,46 @@ double prevTime;
 int mouseX = 0, mouseY = 0;
 
 unsigned int particle_textures[5];
-unsigned int misc_tex[2];
+unsigned int misc_tex[3];
 unsigned int sky_textures[1];
 unsigned int prev_texture;
-unsigned int logs;
+unsigned int logs, cauldron;
 
-particle particles[MAX_PARTICLES];
+particle* particles;
+vec3* tree_positions;
 
 void initTextures()
 {
   int i;
-  char* pnames[] = {"textures/flame.png", "textures/smoke.png", "textures/sparkle.png", "textures/sparkle2.png"};
-  char* gnames[] = {"textures/ground.png", "textures/house_front.png"};
+  char buffer[50];
+  char* pnames[] = {"flame.png", "smoke.png", "sparkle.png", "sparkle2.png"};
+  char* gnames[] = {"ground.png", "house_front.png", "ftree.png"};
   
   for(i = 0; i < NUM_TEXTURES; i++)
   {
-    particle_textures[i] = loadPng(pnames[i]);
+    sprintf(buffer, "%s%s", "textures/", pnames[i]);  
+    particle_textures[i] = loadPng(buffer);
   }
   
-  for(i = 0; i < 2; i++)
+  for(i = 0; i < 3; i++)
   {
-    misc_tex[i] = loadPng(gnames[i]);
+    sprintf(buffer, "%s%s", "textures/", gnames[i]);  
+    misc_tex[i] = loadPng(buffer);
   }
   
   sky_textures[0] = loadPng("textures/sky.png");
   
   logs = LoadOBJ("wood_logs.obj");
+  cauldron = LoadOBJ("pot.obj");
+}
+
+void initTrees()
+{
+    int i;
+    for(i = 0; i < NUM_TREES; i++)
+    {
+        tree_positions[i] = (vec3){getRandom() * 4 * dim, -11, getRandom() * 4 * dim};
+    }
 }
 
 /*
@@ -164,7 +181,6 @@ void drawSky(double d)
 void drawHouse()
 {
   glDisable(GL_BLEND);
-  glEnable(GL_CULL_FACE);
   glPushMatrix();
   
   if(prev_texture != misc_tex[1])
@@ -222,6 +238,66 @@ void drawLogs()
   glCallList(logs);
   
   glPopMatrix();
+  
+}
+
+void drawCauldron()
+{
+  glPushMatrix();
+  
+  glColor4ub(255, 255, 255, 255);
+  glTranslatef(0, -11, 0.5);
+  glScalef(10, 10, 10);
+  glRotatef(90, 0, 1, 0);
+  glCallList(cauldron);
+  
+  glPopMatrix();
+}
+
+void drawTrees()
+{
+  glEnable(GL_BLEND);
+  glEnable(GL_TEXTURE_2D);
+  glDepthMask(0);
+  
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
+  float shiny[] = {16};
+  float ambd[] = {1,1,1,1};
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shiny);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambd);
+  
+    int i;
+    for(i = 0; i < NUM_TREES; i++)
+    {
+        
+         if(prev_texture != misc_tex[2])
+            glBindTexture(GL_TEXTURE_2D, misc_tex[2]);
+            
+        glPushMatrix();
+
+        vec3 v = tree_positions[i];
+        glTranslatef(v.x, v.y, v.z);
+        glScalef(3, 3, 3);
+        //glRotatef(pangle, 0, 1, 0);
+
+        glBegin(GL_QUADS);
+
+            glNormal3f(1, 0, 0);
+            glTexCoord2f(0, 0.8); glVertex3f(0, 0, 0);
+            glTexCoord2f(0.8, 0.8); glVertex3f(1, 0, 0);
+            glTexCoord2f(0.8, 0); glVertex3f(1, 1, 0);
+            glTexCoord2f(0, 0); glVertex3f(0, 1, 0);
+
+        glEnd();
+
+        glPopMatrix();
+
+        prev_texture = misc_tex[2];
+    }
+    
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glDepthMask(1);
 }
 
 void drawParticles()
@@ -229,11 +305,15 @@ void drawParticles()
   glEnable(GL_BLEND);
   glEnable(GL_TEXTURE_2D);
   glEnable(GL_POINT_SPRITE);
+  
   glDepthMask(0);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   
   float shiny[] = {16};
+  float ambd[] = {1,1,1,1};
   glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shiny);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambd);
+    
    
   int i;
   for(i = 0; i < MAX_PARTICLES; i++)
@@ -242,10 +322,6 @@ void drawParticles()
     
     if(prev_texture != particle_textures[p.texture_id])
       glBindTexture(GL_TEXTURE_2D, particle_textures[p.texture_id]);
-    
-    //float ambd[] = {p.current_color.r/255, p.current_color.g/255, p.current_color.b/255, 1};
-    float ambd[] = {1,1,1,1};
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambd);
     
     glColor4ub(p.current_color.r, p.current_color.g, p.current_color.b, p.current_alpha);
     
@@ -262,13 +338,11 @@ void drawParticles()
       glTexCoord2f(0.10, 0.90);  glVertex3f(rx2, p.y, rz2);
     glEnd();
     
-    //glPopMatrix();
     prev_texture = particle_textures[p.texture_id];
   }
 
   glBindTexture(GL_TEXTURE_2D, 0);
   glDepthMask(1);
-  
   //printf("Time to render particles: %0.0f ms\n", glutGet(GLUT_ELAPSED_TIME) - start);
   
 }
@@ -369,6 +443,7 @@ void drawSourcePrism(double x, double y, double z, double s)
 void display()
 {
   //double start = glutGet(GLUT_ELAPSED_TIME);
+  
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
@@ -408,7 +483,7 @@ void display()
       //float position_vector[] = {distance*cos(t * (PI/180)), elevation, distance*sin(t * (PI/180)), 1.0};
       //drawSourcePrism(distance*cos(t * (PI/180)), elevation, distance*sin(t * (PI/180)), 0.3);
       
-      float position_vector[] = {Cos(pangle), -10 + 0.25 * cos(elapsed_time) * getRandom(), -Sin(pangle), 1};
+      float position_vector[] = {Cos(pangle), -10 + 0.5 * cos(elapsed_time) * getRandom(), -Sin(pangle), 1};
       
       //  OpenGL should normalize normal vectors
       glEnable(GL_NORMALIZE);
@@ -433,13 +508,25 @@ void display()
      
     double size = 5 * dim;
     
-    glDisable(GL_BLEND);
-    
-    drawSky(size); // Draw the skybox
-    drawGround(); // Draw the ground
-    drawLogs(); // Draw the firepit logs
-    drawHouse(); // Draw the house
-    drawParticles(); // Draw all of the fire particles last as they have alpha
+    switch(SCENE_MODE)
+    {
+        case SCENE_CAMPFIRE:
+        
+            glEnable(GL_FOG);
+         
+            drawSky(size); // Draw the skybox
+            drawGround(); // Draw the ground
+            drawLogs(); // Draw the firepit logs
+            drawCauldron();
+            drawHouse(); // Draw the house
+            drawTrees();
+            drawParticles(); // Draw all of the fire particles last as they have alpha
+            
+            glDisable(GL_BLEND);
+            glDisable(GL_FOG);
+            
+            break;
+    }
         
     /* Axis Drawing and Labeling Code
     * Credit: Prof. Schreuder */
@@ -507,7 +594,7 @@ void display()
     glFlush();
     glutSwapBuffers();
     
-    //printf("Time for entire frame is %f ms.\n", glutGet(GLUT_ELAPSED_TIME) - start);
+    //printf("Time for entire frame is %0.0f ms.\n", glutGet(GLUT_ELAPSED_TIME) - start);
 }
 
 /*
@@ -578,6 +665,7 @@ void idle()
    updateParticles(particles, elapsed_time, elapsed_time - prevTime);
    
    prevTime = elapsed_time;
+   
    //  Tell GLUT it is necessary to redisplay the scene
    glutPostRedisplay();
 }
@@ -616,6 +704,9 @@ void key(unsigned char ch, int xx, int yy)
   
   switch(ch)
   {
+    case 'r':
+      SCENE_MODE = (SCENE_MODE + 1) % 3;
+      break;
     case 'q':
       MODE = !MODE;
       break;
@@ -725,13 +816,27 @@ int main(int argc, char *argv[])
   glutMotionFunc(motion);
   glutMouseFunc(mouse);
   glutIdleFunc(idle);
+ 
+  particles = (particle*) malloc(sizeof(particle) * MAX_PARTICLES);
+  tree_positions = (vec3*) malloc(sizeof(vec3) * NUM_TREES);
   
   initTextures();
   initParticles(particles);
+  initTrees();
   
-  glEnable(GL_DEPTH_TEST); 
+  glEnable(GL_DEPTH_TEST);
+  
+  GLfloat fogColor[4] = {0.25f, 0.25f, 0.25f, 1.0f}; 
+
+  glFogi(GL_FOG_MODE, GL_EXP);
+  glFogfv(GL_FOG_COLOR, fogColor); 
+  glFogf(GL_FOG_DENSITY, 0.08f); 
+  glEnable(GL_FOG);
   
   glutMainLoop();
+  
+  free(particles);
+  free(tree_positions);
   
   return 0; 
 }

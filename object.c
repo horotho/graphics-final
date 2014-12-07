@@ -231,7 +231,8 @@ static void SetMaterial(const char* name)
    for (k=0;k<Nmtl;k++)
       if (!strcmp(mtl[k].name,name))
       {
-         //  Set material colors
+         //Set material colors
+         glColor4f(mtl[k].Kd[0], mtl[k].Kd[1], mtl[k].Kd[2], 1); 
          glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT  ,mtl[k].Ka);
          glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE  ,mtl[k].Kd);
          glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR ,mtl[k].Ks);

@@ -6,10 +6,16 @@
 typedef struct color color;
 typedef struct pgroup pgroup;
 typedef struct particle particle;
+typedef struct vec3 vec3;
 
 struct color
 {
   int r, g, b;
+};
+
+struct vec3
+{
+  float x, y, z;
 };
 
 struct particle
