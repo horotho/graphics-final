@@ -9,6 +9,8 @@
 #define PI 3.14159265
 #define NUM_TEXTURES 5
 #define NUM_TREES 40
+#define NUM_FIRE_PARTICLES 1000
+#define NUM_SNOW_PARTICLES 1000
 #define AXES_LENGTH 3
 
 enum
@@ -58,7 +60,7 @@ unsigned int sky_textures[1];
 unsigned int prev_texture;
 unsigned int logs, tree, cauldron;
 
-particle* particles;
+particle *fire, *snow;
 vec3* tree_positions;
 
 void initTextures()
@@ -317,7 +319,7 @@ void drawTrees()
 
 }
 
-void drawParticles()
+void drawParticles(particle *part, int len)
 {
   glEnable(GL_BLEND);
   glEnable(GL_TEXTURE_2D);
@@ -333,9 +335,9 @@ void drawParticles()
     
    
   int i;
-  for(i = 0; i < MAX_PARTICLES; i++)
+  for(i = 0; i < len; i++)
   {
-    particle p = particles[i];
+    particle p = part[i];
     
     if(prev_texture != particle_textures[p.texture_id])
       glBindTexture(GL_TEXTURE_2D, particle_textures[p.texture_id]);
@@ -537,8 +539,9 @@ void display()
             drawLogs(); // Draw the firepit logs
             //drawCauldron();
             drawHouse(); // Draw the house
-            drawTrees();
-            drawParticles(); // Draw all of the fire particles last as they have alpha
+            //drawTrees();
+            drawParticles(snow, NUM_SNOW_PARTICLES);
+            drawParticles(fire, NUM_FIRE_PARTICLES); // Draw all of the fire particles last as they have alpha
             
             glDisable(GL_BLEND);
             glDisable(GL_FOG);
@@ -680,7 +683,8 @@ void idle()
    elapsed_time = glutGet(GLUT_ELAPSED_TIME)/1000.0;
    
    pangle = atan2(x, z) * (180/PI);
-   updateParticles(particles, elapsed_time, elapsed_time - prevTime);
+   updateParticles(fire, elapsed_time, elapsed_time - prevTime, NUM_FIRE_PARTICLES);
+   updateParticles(snow, elapsed_time, elapsed_time - prevTime, NUM_SNOW_PARTICLES);
    
    prevTime = elapsed_time;
    
@@ -835,11 +839,13 @@ int main(int argc, char *argv[])
   glutMouseFunc(mouse);
   glutIdleFunc(idle);
  
-  particles = (particle*) malloc(sizeof(particle) * MAX_PARTICLES);
+  fire = (particle*) malloc(sizeof(particle) * NUM_FIRE_PARTICLES);
+  snow = (particle*) malloc(sizeof(particle) * NUM_SNOW_PARTICLES);
   tree_positions = (vec3*) malloc(sizeof(vec3) * NUM_TREES);
   
   initTextures();
-  initParticles(particles);
+  initParticles(fire, NUM_FIRE_PARTICLES, 0);
+  initParticles(snow, NUM_SNOW_PARTICLES, 1);
   initTrees();
   
   glEnable(GL_DEPTH_TEST);
@@ -853,7 +859,8 @@ int main(int argc, char *argv[])
   
   glutMainLoop();
   
-  free(particles);
+  free(fire);
+  free(snow);
   free(tree_positions);
   
   return 0; 

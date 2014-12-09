@@ -1,7 +1,8 @@
 #ifndef _PARTICLES_H
 #define _PARTICLES_H
 
-#define MAX_PARTICLES 2000
+#define FIRE 0
+#define SNOW 1
 
 typedef struct color color;
 typedef struct pgroup pgroup;
@@ -30,11 +31,11 @@ struct particle
   void (*deathptr)(particle *p, double time);
 };
 
-void initParticles(particle* parray);
-void updateParticles(particle* parray, double time, double timestep);
+void initParticles(particle* parray, int len, int type);
+void updateParticles(particle* parray, double time, double timestep, int len);
 void onParticleDeathFlame(particle *p, double time);
 void onParticleDeathSmoke(particle *p, double time);
-void onParticleDeathRain(particle *p, double time);
+void onParticleDeathSnow(particle *p, double time);
 float getRandom();
 
 #endif

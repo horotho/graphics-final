@@ -18,53 +18,38 @@ float lerp(float a, float b, float t)
   return a + t * (b - a);
 }
 
-void initParticles(particle* parray)
+void initParticles(particle* parray, int len, int type)
 {
   srand(time(NULL));
   
   int i = 0;
-  for(i = 0; i < MAX_PARTICLES; i++)
+  for(i = 0; i < len; i++)
   {
     particle* p = &parray[i];
+    p->spawn_time = (double) (15*i) / len;
     
-    p->x = 0;
-    p->y = INITIAL_Y;
-    p->z = 0;
-    
-    //p->vx = getRandom() - 0.5;
-    p->vy = getRandom() + 1;
-    p->vz = getRandom() - 0.5;
-    
-    p->initial_alpha = 255;
-    p->end_alpha = p->initial_alpha/2;
-    
-    p->life_time = 0;
-    p->spawn_time = (double) 15*i/MAX_PARTICLES;
-    
-    p->initial_scale = INITIAL_SCALE;
-    p->current_scale = p->initial_scale;
-    p->end_scale = END_SCALE;
-    
-    p->initial_color = FLAME_INITIAL_COLOR;
-    p->current_color = p->initial_color;
-    p->end_color = (color) {255, 255, 255};
-    
-    p->deathptr = &onParticleDeathSmoke;
-    p->texture_id = 0;
-    
-    if(i < MAX_PARTICLES / 2)
+    switch(type)
     {
-      onParticleDeathRain(p, p->spawn_time);
-      p->life_time = 0;
+      case FIRE:
+        onParticleDeathSmoke(p, p->spawn_time);
+        p->life_time = 0;
+        break;
+        
+      case SNOW:
+      
+        onParticleDeathSnow(p, p->spawn_time);
+        p->life_time = 0;
+        break;
     }
+    
   }
 }
 
-void updateParticles(particle* parray, double time, double timestep)
+void updateParticles(particle* parray, double time, double timestep, int len)
 {
   int i = 0;
   float percent;
-  for(i = 0; i < MAX_PARTICLES; i++)
+  for(i = 0; i < len; i++)
   {
     particle* p = &parray[i];
     
@@ -98,6 +83,7 @@ void onParticleDeathSmoke(particle *p, double time)
   p->z = 0.5*getRandom() - 0.45;
   
   p->vy = getRandom() + 1;
+  p->vz = getRandom() - 0.5;
   
   p->texture_id = 0;
   p->life_time = 1.5;
@@ -140,7 +126,7 @@ void onParticleDeathFlame(particle *p, double time)
   p->deathptr = &onParticleDeathSmoke;
 }
 
-void onParticleDeathRain(particle *p, double time)
+void onParticleDeathSnow(particle *p, double time)
 {
   p->x = 2*30*getRandom() - 30;
   p->z = 2*30*getRandom() - 30;
@@ -154,8 +140,8 @@ void onParticleDeathRain(particle *p, double time)
   p->life_time = 3;
   p->spawn_time = time;
   
-  p->initial_scale = 1;
-  p->end_scale = 1;
+  p->initial_scale = 0.75;
+  p->end_scale = 0.5;
   p->current_scale = p->initial_scale;
   
   p->initial_color = (color) {255, 255, 255};
@@ -165,5 +151,5 @@ void onParticleDeathRain(particle *p, double time)
   p->initial_alpha = 255;
   p->end_alpha = 255;
   
-  p->deathptr = &onParticleDeathRain;
+  p->deathptr = &onParticleDeathSnow;
 }
