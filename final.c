@@ -8,7 +8,7 @@
 
 #define PI 3.14159265
 #define NUM_TEXTURES 5
-#define NUM_TREES 20
+#define NUM_TREES 40
 #define AXES_LENGTH 3
 
 enum
@@ -56,7 +56,7 @@ unsigned int particle_textures[5];
 unsigned int misc_tex[3];
 unsigned int sky_textures[1];
 unsigned int prev_texture;
-unsigned int logs, cauldron;
+unsigned int logs, tree, cauldron;
 
 particle* particles;
 vec3* tree_positions;
@@ -83,7 +83,8 @@ void initTextures()
   sky_textures[0] = loadPng("textures/sky.png");
   
   logs = LoadOBJ("wood_logs.obj");
-  cauldron = LoadOBJ("pot.obj");
+	tree = LoadOBJ("sassafras.obj"); 
+ //cauldron = LoadOBJ("pot.obj");
 }
 
 void initTrees()
@@ -91,7 +92,7 @@ void initTrees()
     int i;
     for(i = 0; i < NUM_TREES; i++)
     {
-        tree_positions[i] = (vec3){getRandom() * 4 * dim, -11, getRandom() * 4 * dim};
+       tree_positions[i] = (vec3){60*getRandom()-30,  -11, 60*getRandom()-30};
     }
 }
 
@@ -256,6 +257,20 @@ void drawCauldron()
 
 void drawTrees()
 {
+
+	int i;
+	for(i = 0; i < NUM_TREES; i++)
+	{
+		glPushMatrix();
+			vec3 v = tree_positions[i];
+			glTranslatef(v.x, v.y, v.z);
+			glScalef(0.5, 0.5, 0.5);
+			glCallList(tree);
+		glPopMatrix();		
+	}
+
+
+ /*
   glEnable(GL_BLEND);
   glEnable(GL_TEXTURE_2D);
   glDepthMask(0);
@@ -298,6 +313,8 @@ void drawTrees()
     
   glBindTexture(GL_TEXTURE_2D, 0);
   glDepthMask(1);
+*/
+
 }
 
 void drawParticles()
@@ -489,7 +506,8 @@ void display()
       glEnable(GL_NORMALIZE);
       //  Enable lighting
       glEnable(GL_LIGHTING);
-      
+			glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE);      
+
       //  glColor sets ambient and diffuse color materials
       glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
       glEnable(GL_COLOR_MATERIAL);
@@ -519,7 +537,7 @@ void display()
             drawLogs(); // Draw the firepit logs
             //drawCauldron();
             drawHouse(); // Draw the house
-            //drawTrees();
+            drawTrees();
             drawParticles(); // Draw all of the fire particles last as they have alpha
             
             glDisable(GL_BLEND);

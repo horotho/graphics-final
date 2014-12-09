@@ -52,7 +52,7 @@ void initParticles(particle* parray)
     p->deathptr = &onParticleDeathSmoke;
     p->texture_id = 0;
     
-    if(i > MAX_PARTICLES / 2)
+    if(i < MAX_PARTICLES / 2)
     {
       onParticleDeathRain(p, p->spawn_time);
       p->life_time = 0;
