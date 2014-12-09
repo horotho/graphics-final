@@ -1,7 +1,7 @@
 #ifndef _PARTICLES_H
 #define _PARTICLES_H
 
-#define MAX_PARTICLES 1000
+#define MAX_PARTICLES 2000
 
 typedef struct color color;
 typedef struct pgroup pgroup;
@@ -34,6 +34,7 @@ void initParticles(particle* parray);
 void updateParticles(particle* parray, double time, double timestep);
 void onParticleDeathFlame(particle *p, double time);
 void onParticleDeathSmoke(particle *p, double time);
+void onParticleDeathRain(particle *p, double time);
 float getRandom();
 
 #endif

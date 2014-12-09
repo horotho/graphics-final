@@ -51,6 +51,12 @@ void initParticles(particle* parray)
     
     p->deathptr = &onParticleDeathSmoke;
     p->texture_id = 0;
+    
+    if(i > MAX_PARTICLES / 2)
+    {
+      onParticleDeathRain(p, p->spawn_time);
+      p->life_time = 0;
+    }
   }
 }
 
@@ -65,11 +71,11 @@ void updateParticles(particle* parray, double time, double timestep)
     percent = (time - p->spawn_time)/p->life_time;
     if(percent > 1) percent = 1;
     
+    //p->x += p->vx * timestep;
+    //p->x = 0.5*cos(PI*percent);
     p->x += p->vx * timestep;
-    //p->x = 1/tan(PI*percent);
     p->y += p->vy * timestep;
     p->z += p->vz * timestep;
-    //p->z = cos(PI*percent);
     
     p->current_alpha = (int) lerp(p->initial_alpha, p->end_alpha, percent);
     p->current_scale = lerp(p->initial_scale, p->end_scale, percent);
@@ -132,4 +138,32 @@ void onParticleDeathFlame(particle *p, double time)
   p->end_alpha = 0;
   
   p->deathptr = &onParticleDeathSmoke;
+}
+
+void onParticleDeathRain(particle *p, double time)
+{
+  p->x = 2*30*getRandom() - 30;
+  p->z = 2*30*getRandom() - 30;
+  p->y = 5;
+  
+  p->vx = 0;
+  p->vz = 0;
+  p->vy = -8;
+  
+  p->texture_id = 4;
+  p->life_time = 3;
+  p->spawn_time = time;
+  
+  p->initial_scale = 1;
+  p->end_scale = 1;
+  p->current_scale = p->initial_scale;
+  
+  p->initial_color = (color) {255, 255, 255};
+  p->end_color = (color) {255, 255, 255};
+  p->current_color = p->initial_color;
+  
+  p->initial_alpha = 255;
+  p->end_alpha = 255;
+  
+  p->deathptr = &onParticleDeathRain;
 }

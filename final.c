@@ -7,7 +7,7 @@
 #include "particles.h"
 
 #define PI 3.14159265
-#define NUM_TEXTURES 4
+#define NUM_TEXTURES 5
 #define NUM_TREES 20
 #define AXES_LENGTH 3
 
@@ -65,7 +65,7 @@ void initTextures()
 {
   int i;
   char buffer[50];
-  char* pnames[] = {"flame.png", "smoke.png", "sparkle.png", "sparkle2.png"};
+  char* pnames[] = {"flame.png", "smoke.png", "sparkle.png", "sparkle2.png", "rain.png"};
   char* gnames[] = {"ground.png", "house_front.png", "ftree.png"};
   
   for(i = 0; i < NUM_TEXTURES; i++)
@@ -517,9 +517,9 @@ void display()
             drawSky(size); // Draw the skybox
             drawGround(); // Draw the ground
             drawLogs(); // Draw the firepit logs
-            drawCauldron();
+            //drawCauldron();
             drawHouse(); // Draw the house
-            drawTrees();
+            //drawTrees();
             drawParticles(); // Draw all of the fire particles last as they have alpha
             
             glDisable(GL_BLEND);
