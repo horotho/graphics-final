@@ -9,6 +9,7 @@
 #define PARTICLE_LIGHTSPEED 2
 #define PARTICLE_RANDOM 3
 #define PARTICLE_WIND 4
+#define PARTICLE_CHIRP 5
 
 typedef struct color color;
 typedef struct pgroup pgroup;
@@ -51,5 +52,6 @@ float getRandom();
 float linear(float factor, float percent);
 float randerm(float factor, float percent);
 float wave(float factor, float percent);
+float chirp(float factor, float percent);
 
 #endif

@@ -27,7 +27,7 @@ enum {LIGHTING_ON = 1, LIGHTING_OFF = 0};
 
 char* text[] = {"Orthogonal", "Perspective"};
 
-char* pmodes[] = {"Normal", "Wavy", "Lightspeed", "Random", "Wind"};
+char* pmodes[] = {"Normal", "Wavy", "Lightspeed", "Random", "Wind", "Chirp"};
 
 int MODE = MODE_PERSPECTIVE;
 int AXES_MODE = AXES_MODE_ON;
@@ -565,64 +565,20 @@ void display()
     /* Axis Drawing and Labeling Code
     * Credit: Prof. Schreuder */
 
-    if(AXES_MODE == AXES_MODE_ON)
-    {
-      //  Draw axes in white
-      glTranslatef(0, -11, 0);
-      glLineWidth(2);
-      glBegin(GL_LINES);
-      glColor3f(1, 0, 0);
-      glVertex3d(-AXES_LENGTH,0,0);
-      glVertex3d(0, 0, 0);
       
-      glColor3f(1, 1, 1);
-      glVertex3d(0, 0, 0);
-      glVertex3d(AXES_LENGTH,0,0);
-      
-      glColor3f(1, 0, 0);
-      glVertex3d(0,-AXES_LENGTH,0);
-      glVertex3d(0, 0, 0);
-      
-      glColor3f(1, 1, 1);
-      glVertex3d(0, 0, 0);
-      glVertex3d(0, AXES_LENGTH,0);
-      
-      glColor3f(1, 0, 0);
-      glVertex3d(0,0,-AXES_LENGTH);
-      glVertex3d(0, 0, 0);
-      
-      glColor3f(1, 1, 1);
-      glVertex3d(0, 0, 0);
-      glVertex3d(0,0,AXES_LENGTH);
-      glEnd();
-      //  Label axes
-      glRasterPos3d(1.5,0,0);
-      Print("X");
-      glRasterPos3d(0,1.5,0);
-      Print("Y");
-      glRasterPos3d(0,0,1.5);
-      Print("Z");
-      
-      glColor3f(1, 1, 1);
-      glWindowPos2i(5, 5);
-      
-      Print("End -> R: %d G: %d B: %d", end.r, end.g, end.b);
-      
-      glWindowPos2i(5, 18);
-      Print("Start -> R: %d G: %d B: %d", start.r, start.g, start.b);
-                  
-      /* End Code Borrowing */
-      
-      glWindowPos2i(5, 32);
-      Print("Projection Mode = %s, Axes = %s, Particle = %s",
-                  text[MODE],
-                  AXES_MODE == AXES_MODE_ON ? "ON" : "OFF",
-                  pmodes[PARTICLE_MODE]
-                 );
-                  
-    }
+    glColor3f(1, 1, 1);
+    glWindowPos2i(5, 5);
 
-    
+    Print("End Color-> R: %3d G: %3d B: %3d", end.r, end.g, end.b);
+
+    glWindowPos2i(5, 18);
+    Print("Start Color -> R: %3d G: %3d B: %3d", start.r, start.g, start.b);
+          
+    /* End Code Borrowing */
+
+    glWindowPos2i(5, 32);
+    Print("Particle = %s", pmodes[PARTICLE_MODE]);
+                  
     glFlush();
     glutSwapBuffers();
     
@@ -724,7 +680,7 @@ void key(unsigned char ch, int xx, int yy)
   {
     case 'r':
       PREV_PARTICLE_MODE = PARTICLE_MODE;
-      PARTICLE_MODE = (PARTICLE_MODE + 1) % 5;
+      PARTICLE_MODE = (PARTICLE_MODE + 1) % 6;
       break;
     case 'z':
       AXES_MODE = !AXES_MODE;
@@ -895,7 +851,7 @@ int main(int argc, char *argv[])
   glutInitWindowSize(500, 500);
   glutInitWindowPosition(1000, 0);
   
-  glutCreateWindow("Final Project");
+  glutCreateWindow("Particle System");
   
   glutDisplayFunc(display);
   glutReshapeFunc(reshape);

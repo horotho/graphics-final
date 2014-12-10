@@ -135,7 +135,7 @@ void changeVelocity(particle* parray, int len, int type, int velType)
         
       break;
       
-        case PARTICLE_WIND:
+    case PARTICLE_WIND:
     
         if(type == FIRE)
         {
@@ -155,6 +155,31 @@ void changeVelocity(particle* parray, int len, int type, int velType)
           
           p->vy = &linear;
           p->vx = &linear;
+          p->vz = &linear;
+        }
+        
+      break;
+      
+   case PARTICLE_CHIRP:
+    
+        if(type == FIRE)
+        {
+          p->vxs = 4 * getRandom() - 2;
+          p->vys = 3;
+          p->vzs = 4 * getRandom() - 2;
+          
+          p->vy = &linear;
+          p->vx = &chirp;
+          p->vz = &linear;
+        }
+        else if(type == SNOW)
+        {
+          p->vxs = 2;
+          p->vys = -9;
+          p->vzs = 2;
+          
+          p->vy = &linear;
+          p->vx = &chirp;
           p->vz = &linear;
         }
         
@@ -216,7 +241,7 @@ void updateParticles(particle* parray, double time, double timestep, int len)
     percent = (time - p->spawn_time)/p->life_time;
     if(percent > 1) percent = 1;
     
-    p->x += p->vxs * p->vx(6, percent) * timestep;
+    p->x += p->vxs * p->vx(4, percent) * timestep;
     p->y += p->vys * p->vy(1, percent) * timestep;
     p->z += p->vzs * p->vz(1, percent) * timestep;
     
@@ -315,4 +340,9 @@ float randerm(float factor, float percent)
 float wave(float factor, float percent)
 {
   return cos(factor * PI * percent);
+}
+
+float chirp(float factor, float percent)
+{
+  return cos(factor * PI * percent * percent);
 }
