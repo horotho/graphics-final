@@ -7,10 +7,9 @@
 #include "particles.h"
 
 #define PI 3.14159265
-#define NUM_TEXTURES 5
-#define NUM_TREES 40
-#define NUM_FIRE_PARTICLES 1000
-#define NUM_SNOW_PARTICLES 1000
+#define NUM_TREES 1
+#define NUM_FIRE_PARTICLES 3000
+#define NUM_SNOW_PARTICLES 2000
 #define AXES_LENGTH 3
 
 enum
@@ -25,14 +24,16 @@ enum
 enum {MODE_ORTHOGONAL = 0, MODE_PERSPECTIVE = 1};
 enum {AXES_MODE_OFF = 0, AXES_MODE_ON = 1};
 enum {LIGHTING_ON = 1, LIGHTING_OFF = 0};
-enum {SCENE_CAMPFIRE = 0, SCENE_WITCH = 1, SCENE_ROCKET = 2};
 
 char* text[] = {"Orthogonal", "Perspective"};
+
+char* pmodes[] = {"Normal", "Wavy", "Lightspeed", "Random", "Wind"};
 
 int MODE = MODE_PERSPECTIVE;
 int AXES_MODE = AXES_MODE_ON;
 int LIGHTING_MODE = LIGHTING_ON;
-int SCENE_MODE = SCENE_CAMPFIRE;
+int PARTICLE_MODE = PARTICLE_NORMAL;
+int PREV_PARTICLE_MODE = PARTICLE_NORMAL;
 
 int th = 0;        // Azimuth of view angle
 int ph = 0;        // Elevation of view angle
@@ -54,8 +55,13 @@ double pangle = 0;
 double prevTime;
 int mouseX = 0, mouseY = 0;
 
+color start = (color) {225, 0, 0};
+color end = (color) {240, 240, 0};
+int colorChanged = 0;
+
 unsigned int particle_textures[5];
 unsigned int misc_tex[3];
+unsigned int cabin_tex[4];
 unsigned int sky_textures[1];
 unsigned int prev_texture;
 unsigned int logs, tree, cauldron;
@@ -65,28 +71,19 @@ vec3* tree_positions;
 
 void initTextures()
 {
-  int i;
-  char buffer[50];
-  char* pnames[] = {"flame.png", "smoke.png", "sparkle.png", "sparkle2.png", "rain.png"};
-  char* gnames[] = {"ground.png", "house_front.png", "ftree.png"};
+  char* pnames[] = {"textures/flame3.png", "textures/smoke.png", "textures/rain.png"};
+  char* mnames[] = {"textures/ground.png", "textures/ftree.png", "textures/house_front.png"};
+  char* snames[] = {"textures/sky.png"};
+  char* cnames[] = {"textures/log_cabin.png", "textures/cw.png", 
+                    "textures/cf.png", "textures/thatch.png"};
   
-  for(i = 0; i < NUM_TEXTURES; i++)
-  {
-    sprintf(buffer, "%s%s", "textures/", pnames[i]);  
-    particle_textures[i] = loadPng(buffer);
-  }
-  
-  for(i = 0; i < 3; i++)
-  {
-    sprintf(buffer, "%s%s", "textures/", gnames[i]);  
-    misc_tex[i] = loadPng(buffer);
-  }
-  
-  sky_textures[0] = loadPng("textures/sky.png");
+  loadPng(pnames, 3, particle_textures);
+  loadPng(mnames, 3, misc_tex);
+  loadPng(snames, 1, sky_textures);
+  loadPng(cnames, 4, cabin_tex);
   
   logs = LoadOBJ("wood_logs.obj");
-	tree = LoadOBJ("sassafras.obj"); 
- //cauldron = LoadOBJ("pot.obj");
+  tree = LoadOBJ("sassafras.obj"); 
 }
 
 void initTrees()
@@ -94,7 +91,10 @@ void initTrees()
     int i;
     for(i = 0; i < NUM_TREES; i++)
     {
-       tree_positions[i] = (vec3){60*getRandom()-30,  -11, 60*getRandom()-30};
+       vec3 vec = (vec3) {70*getRandom()-30,  -11, 70*getRandom()-30};
+       if(vec.x < 0 && vec.z < 0) vec.x *= -1;
+       
+       tree_positions[i] = vec;
     }
 }
 
@@ -183,30 +183,101 @@ void drawSky(double d)
 
 void drawHouse()
 {
-  glDisable(GL_BLEND);
   glPushMatrix();
   
-  if(prev_texture != misc_tex[1])
-    glBindTexture(GL_TEXTURE_2D, misc_tex[1]);
+  glEnable(GL_DEPTH_TEST);
   
-  glTranslatef(-5, -11, 0);
-  glScalef(5, 5, 5);
-  glRotatef(90, 0, 1, 0);
-  glColor4ub(255, 255, 255, 255);
+  float shiny[] = {32};
+  float ambd[] = {1, 1, 1, 0.5};
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shiny);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambd);
+  
+  glTranslatef(-5, -11, -10);
+  glRotated(290, 0, 1, 0);
+  glScalef(5, 6, 5);
+  
+  glBindTexture(GL_TEXTURE_2D, cabin_tex[0]);
+  //glColor4ub(255, 255, 255, 255);
+  glBegin(GL_QUADS);
+      
+      // Right side
+      glNormal3f(0, 0, -1);
+      glTexCoord2f(0, 0);      glVertex3f(0, 0, 0);
+      glTexCoord2f(0.8, 0);    glVertex3f(1, 0, 0);
+      glTexCoord2f(0.8, 0.65);  glVertex3f(1, 0.6, 0);
+      glTexCoord2f(0, 0.65);    glVertex3f(0, 0.6, 0);
+      
+      glNormal3f(0, 0, 1);
+      glTexCoord2f(0, 0);      glVertex3f(0, 0, 1);
+      glTexCoord2f(0.8, 0);    glVertex3f(1, 0, 1);
+      glTexCoord2f(0.8, 0.65);  glVertex3f(1, 0.6, 1);
+      glTexCoord2f(0, 0.65);    glVertex3f(0, 0.6, 1);
+    
+  glEnd();
+  
+  // House Triangle Caps
+  
+  glBegin(GL_TRIANGLES);
+      glNormal3f(-1, 0, 0);
+      glTexCoord2f(0, 0);    glVertex3f(0, 0.6, 0);
+      glTexCoord2f(0.5, 0.5);  glVertex3f(0, 1, 0.5);
+      glTexCoord2f(0.5, 0);  glVertex3f(0, 0.6, 1);
+      
+      glNormal3f(1, 0, 0);
+      glTexCoord2f(0, 0);    glVertex3f(1, 0.6, 0);
+      glTexCoord2f(0.5, 0.5);  glVertex3f(1, 1, 0.5);
+      glTexCoord2f(0.5, 0);  glVertex3f(1, 0.6, 1);
+  glEnd();
+  
+  glBindTexture(GL_TEXTURE_2D, cabin_tex[3]);
   
   glBegin(GL_QUADS);
-   
-    glNormal3f(1, 0, 0);
-    glTexCoord2f(0, 1); glVertex3f(0, 0, 0);
-    glTexCoord2f(1, 1); glVertex3f(1, 0, 0);
-    glTexCoord2f(1, 0); glVertex3f(1, 1, 0);
-    glTexCoord2f(0, 0); glVertex3f(0, 1, 0);
+      glTexCoord2f(0.6, 0.6);  glVertex3f(0, 0.53, -0.1);
+      glTexCoord2f(0, 0.6);    glVertex3f(1, 0.53, -0.1);
+      glTexCoord2f(0, 0);      glVertex3f(1, 1, 0.5);
+      glTexCoord2f(0.6, 0);    glVertex3f(0, 1, 0.5);
+      
+      glTexCoord2f(0.6, 0.6);  glVertex3f(0, 0.53, 1.1);
+      glTexCoord2f(0, 0.6);    glVertex3f(1, 0.53, 1.1);
+      glTexCoord2f(0, 0);      glVertex3f(1, 1, 0.5);
+      glTexCoord2f(0.6, 0);    glVertex3f(0, 1, 0.5);
+  glEnd();
+  
+  
+  glBindTexture(GL_TEXTURE_2D, cabin_tex[1]);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
+  glBegin(GL_QUADS);
+    
+     // House Back
+      glNormal3f(1, 0, 0);
+      glTexCoord2f(0.8, 0.6);  glVertex3f(0, 0, 0);
+      glTexCoord2f(0, 0.6);    glVertex3f(0, 0, 1);
+      glTexCoord2f(0, 0);      glVertex3f(0, 0.6, 1);
+      glTexCoord2f(0.8, 0);    glVertex3f(0, 0.6, 0);
+      
+  glEnd();
+  
+  glBindTexture(GL_TEXTURE_2D, cabin_tex[2]);
+  
+  glBegin(GL_QUADS);
+    
+     // House Front
+      glNormal3f(-1, 0, 0);
+      glTexCoord2f(0.95, 0.6);  glVertex3f(1, 0, 0);
+      glTexCoord2f(0, 0.6);    glVertex3f(1, 0, 1);
+      glTexCoord2f(0, 0);      glVertex3f(1, 0.6, 1);
+      glTexCoord2f(0.95, 0);    glVertex3f(1, 0.6, 0);
+      
   glEnd();
   
   glPopMatrix();
   
-  glDisable(GL_CULL_FACE);
-  prev_texture = misc_tex[1];
+  prev_texture = cabin_tex[2];
+  glBindTexture(GL_TEXTURE_2D, 0);
+  
+  glDisable(GL_BLEND);
 }
 
 void drawLogs()
@@ -259,7 +330,6 @@ void drawCauldron()
 
 void drawTrees()
 {
-
 	int i;
 	for(i = 0; i < NUM_TREES; i++)
 	{
@@ -270,52 +340,6 @@ void drawTrees()
 			glCallList(tree);
 		glPopMatrix();		
 	}
-
-
- /*
-  glEnable(GL_BLEND);
-  glEnable(GL_TEXTURE_2D);
-  glDepthMask(0);
-  
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  
-  float shiny[] = {16};
-  float ambd[] = {1,1,1,1};
-  glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shiny);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambd);
-  
-    int i;
-    for(i = 0; i < NUM_TREES; i++)
-    {
-        
-         if(prev_texture != misc_tex[2])
-            glBindTexture(GL_TEXTURE_2D, misc_tex[2]);
-            
-        glPushMatrix();
-
-        vec3 v = tree_positions[i];
-        glTranslatef(v.x, v.y, v.z);
-        glScalef(3, 3, 3);
-        //glRotatef(pangle, 0, 1, 0);
-
-        glBegin(GL_QUADS);
-
-            glNormal3f(1, 0, 0);
-            glTexCoord2f(0, 0.8); glVertex3f(0, 0, 0);
-            glTexCoord2f(0.8, 0.8); glVertex3f(1, 0, 0);
-            glTexCoord2f(0.8, 0); glVertex3f(1, 1, 0);
-            glTexCoord2f(0, 0); glVertex3f(0, 1, 0);
-
-        glEnd();
-
-        glPopMatrix();
-
-        prev_texture = misc_tex[2];
-    }
-    
-  glBindTexture(GL_TEXTURE_2D, 0);
-  glDepthMask(1);
-*/
 
 }
 
@@ -351,10 +375,10 @@ void drawParticles(particle *part, int len)
     
     glBegin(GL_QUADS);
       glNormal3f(Cos(pangle), 0, -Sin(pangle));
-      glTexCoord2f(0.10, 0.10);  glVertex3f(rx, p.y, rz);
-      glTexCoord2f(0.90, 0.10);  glVertex3f(rx, p.y + p.current_scale, rz);
-      glTexCoord2f(0.90, 0.90);  glVertex3f(rx2, p.y + p.current_scale, rz2);
-      glTexCoord2f(0.10, 0.90);  glVertex3f(rx2, p.y, rz2);
+      glTexCoord2f(0.20, 0.0);  glVertex3f(rx, p.y, rz);
+      glTexCoord2f(0.80, 0.0);  glVertex3f(rx, p.y + p.current_scale, rz);
+      glTexCoord2f(0.80, 0.60);  glVertex3f(rx2, p.y + p.current_scale, rz2);
+      glTexCoord2f(0.20, 0.60);  glVertex3f(rx2, p.y, rz2);
     glEnd();
     
     prev_texture = particle_textures[p.texture_id];
@@ -473,9 +497,6 @@ void display()
     if (MODE == MODE_PERSPECTIVE)
     {
       gluLookAt(x, y, z,   x + lx, y + ly, z + lz,    0, 1, 0);
-      
-      //printf("lx = %0.3f, ly = %0.3f, lz = %0.3f\n", lx, ly, lz);
-      //printf("px = %0.0f, pz = %0.0f\n", px, pz);
     }
     //  Orthogonal - set world orientation
     else
@@ -508,7 +529,7 @@ void display()
       glEnable(GL_NORMALIZE);
       //  Enable lighting
       glEnable(GL_LIGHTING);
-			glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE);      
+      glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE);      
 
       //  glColor sets ambient and diffuse color materials
       glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
@@ -526,28 +547,20 @@ void display()
    else
      glDisable(GL_LIGHTING);
      
-    double size = 5 * dim;
-    
-    switch(SCENE_MODE)
-    {
-        case SCENE_CAMPFIRE:
         
-            glEnable(GL_FOG);
-         
-            drawSky(size); // Draw the skybox
-            drawGround(); // Draw the ground
-            drawLogs(); // Draw the firepit logs
-            //drawCauldron();
-            drawHouse(); // Draw the house
-            //drawTrees();
-            drawParticles(snow, NUM_SNOW_PARTICLES);
-            drawParticles(fire, NUM_FIRE_PARTICLES); // Draw all of the fire particles last as they have alpha
+    glEnable(GL_FOG);
+ 
+    drawSky(5 * dim); // Draw the skybox
+    drawGround(); // Draw the ground
+    drawLogs(); // Draw the firepit logs
+    drawHouse(); // Draw the house
+    //drawTrees();
+    drawParticles(snow, NUM_SNOW_PARTICLES);
+    drawParticles(fire, NUM_FIRE_PARTICLES);
+    
+    glDisable(GL_BLEND);
+    glDisable(GL_FOG);
             
-            glDisable(GL_BLEND);
-            glDisable(GL_FOG);
-            
-            break;
-    }
         
     /* Axis Drawing and Labeling Code
     * Credit: Prof. Schreuder */
@@ -592,23 +605,21 @@ void display()
       
       glColor3f(1, 1, 1);
       glWindowPos2i(5, 5);
-      Print("View Angle = %d, %d, FOV = %d, DIM = %2.1f",
-                  th, ph, fov, dim);
+      
+      Print("End -> R: %d G: %d B: %d", end.r, end.g, end.b);
+      
+      glWindowPos2i(5, 18);
+      Print("Start -> R: %d G: %d B: %d", start.r, start.g, start.b);
                   
       /* End Code Borrowing */
       
-      glWindowPos2i(5, 20);
-      Print("Projection Mode = %s, Axes = %s, Lighting = %s",
+      glWindowPos2i(5, 32);
+      Print("Projection Mode = %s, Axes = %s, Particle = %s",
                   text[MODE],
                   AXES_MODE == AXES_MODE_ON ? "ON" : "OFF",
-                  LIGHTING_MODE == LIGHTING_ON ? "ON" : "OFF"
+                  pmodes[PARTICLE_MODE]
                  );
-                 
-      glWindowPos2i(5, 35);
                   
-      glWindowPos2i(5, 50);
-      Print("Ambient = %2.2f, Diffuse = %2.2f, Specular = %2.2f",
-                  ambient, diffuse, specular);
     }
 
     
@@ -683,6 +694,20 @@ void idle()
    elapsed_time = glutGet(GLUT_ELAPSED_TIME)/1000.0;
    
    pangle = atan2(x, z) * (180/PI);
+   
+   if(PREV_PARTICLE_MODE != PARTICLE_MODE)
+   {
+      changeVelocity(fire, NUM_FIRE_PARTICLES, FIRE, PARTICLE_MODE);
+      changeVelocity(snow, NUM_SNOW_PARTICLES, SNOW, PARTICLE_MODE);
+      
+      PREV_PARTICLE_MODE = PARTICLE_MODE;
+   }
+   
+   if(colorChanged == 1)
+   {
+       changeColors(start, end);
+   }
+   
    updateParticles(fire, elapsed_time, elapsed_time - prevTime, NUM_FIRE_PARTICLES);
    updateParticles(snow, elapsed_time, elapsed_time - prevTime, NUM_SNOW_PARTICLES);
    
@@ -692,45 +717,14 @@ void idle()
    glutPostRedisplay();
 }
 
-/*
- * GLUT uses this to detect mouse button presses and scrolls.
- * Used to increase/decrease fov. Forward scroll decreases fov
- * backwards scroll increases fov.
- */
-void mouse(int button, int state, int x, int y)
-{
-    if(button == MOUSE_SCROLL_UP && fov > 1)
-    {
-      if(MODE == MODE_PERSPECTIVE)
-        fov = (fov - 1) % 180;
-    }
-    else if(button == MOUSE_SCROLL_DOWN )
-    {
-      if(MODE == MODE_PERSPECTIVE)
-        fov = (fov + 1) % 180;
-    }
-    
-    setProjection();
-    glutPostRedisplay();
-}
-
-/*
- * Used to switch between perspective modes and alter fov:
- * 1 : Orthogonal
- * 2 : Perspective
- * + : increase fov
- * - : decrease fov
- */
 void key(unsigned char ch, int xx, int yy)
 {
   
   switch(ch)
   {
     case 'r':
-      SCENE_MODE = (SCENE_MODE + 1) % 3;
-      break;
-    case 'q':
-      MODE = !MODE;
+      PREV_PARTICLE_MODE = PARTICLE_MODE;
+      PARTICLE_MODE = (PARTICLE_MODE + 1) % 5;
       break;
     case 'z':
       AXES_MODE = !AXES_MODE;
@@ -751,9 +745,81 @@ void key(unsigned char ch, int xx, int yy)
       x += px * 0.2;
       z += pz * 0.2;
       break;
-    case 'x':
-      LIGHTING_MODE = !LIGHTING_MODE;
+      
+    case 't':
+      colorChanged = 1;
+      start.r += 1;
+      if(start.r > 255) start.r = 255;
       break;
+      
+    case 'T':
+    colorChanged = 1;
+      start.r -= 1;
+      if(start.r < 0) start.r = 0;
+    break;
+    
+    case 'u':
+      colorChanged = 1;
+      start.b += 1;
+      if(start.b > 255) start.b = 255;
+      break;
+      
+    case 'U':
+    colorChanged = 1;
+      start.b -= 1;
+      if(start.b < 0) start.b = 0;
+    break;
+    
+    case 'y':
+    colorChanged = 1;
+      start.g += 1;
+      if(start.g > 255) start.g = 255;
+      break;
+      
+    case 'Y':
+    colorChanged = 1;
+      start.g -= 1;
+      if(start.g < 0) start.g = 0;
+    break;
+    
+    
+     case 'g':
+     colorChanged = 1;
+      end.r += 1;
+      if(end.r > 255) end.r = 255;
+      break;
+      
+    case 'G':
+    colorChanged = 1;
+      end.r -= 1;
+      if(end.r < 0) end.r = 0;
+    break;
+    
+    case 'j':
+    colorChanged = 1;
+      end.b += 1;
+      if(end.b > 255) end.b = 255;
+      break;
+      
+    case 'J':
+      colorChanged = 1;
+      end.b -= 1;
+      if(end.b < 0) end.b = 0;
+    break;
+    
+    case 'h':
+      colorChanged = 1;
+      end.g += 1;
+      if(end.g > 255) end.g = 255;
+      break;
+      
+    case 'H':
+      colorChanged = 1;
+      end.g -= 1;
+      if(end.g < 0) end.g = 0;
+    break;
+    
+    
     case '+':
       if(MODE == MODE_PERSPECTIVE)
         fov = (fov + 1) % 180;
@@ -836,7 +902,6 @@ int main(int argc, char *argv[])
   glutKeyboardFunc(key);
   glutSpecialFunc(special);
   glutMotionFunc(motion);
-  glutMouseFunc(mouse);
   glutIdleFunc(idle);
  
   fire = (particle*) malloc(sizeof(particle) * NUM_FIRE_PARTICLES);
@@ -844,8 +909,8 @@ int main(int argc, char *argv[])
   tree_positions = (vec3*) malloc(sizeof(vec3) * NUM_TREES);
   
   initTextures();
-  initParticles(fire, NUM_FIRE_PARTICLES, 0);
-  initParticles(snow, NUM_SNOW_PARTICLES, 1);
+  initParticles(fire, NUM_FIRE_PARTICLES, FIRE);
+  initParticles(snow, NUM_SNOW_PARTICLES, SNOW);
   initTrees();
   
   glEnable(GL_DEPTH_TEST);

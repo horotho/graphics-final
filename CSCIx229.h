@@ -30,7 +30,7 @@ unsigned int LoadTexBMP(const char* file);
 void Project(double fov,double asp,double dim);
 void ErrCheck(const char* where);
 int  LoadOBJ(const char* file);
-unsigned int loadPng(const char* filename);
+unsigned int loadPng(char* filename[], int n, unsigned int textures[]);
 
 #ifdef __cplusplus
 }

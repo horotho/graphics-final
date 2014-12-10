@@ -4,6 +4,12 @@
 #define FIRE 0
 #define SNOW 1
 
+#define PARTICLE_NORMAL 0
+#define PARTICLE_WAVY 1
+#define PARTICLE_LIGHTSPEED 2
+#define PARTICLE_RANDOM 3
+#define PARTICLE_WIND 4
+
 typedef struct color color;
 typedef struct pgroup pgroup;
 typedef struct particle particle;
@@ -25,7 +31,10 @@ struct particle
   unsigned int texture_id;
   double life_time, spawn_time;
   float x, y, z;
-  float vx, vy, vz;
+  float vxs, vys, vzs;
+  float (*vx)(float factor, float percent);
+  float (*vy)(float factor, float percent);
+  float (*vz)(float factor, float percent);
   float initial_scale, end_scale, current_scale;
   color initial_color, end_color, current_color;
   void (*deathptr)(particle *p, double time);
@@ -33,9 +42,14 @@ struct particle
 
 void initParticles(particle* parray, int len, int type);
 void updateParticles(particle* parray, double time, double timestep, int len);
+void changeVelocity(particle* parray, int len, int type, int velType);
+void changeColors(color init, color end);
 void onParticleDeathFlame(particle *p, double time);
 void onParticleDeathSmoke(particle *p, double time);
 void onParticleDeathSnow(particle *p, double time);
 float getRandom();
+float linear(float factor, float percent);
+float randerm(float factor, float percent);
+float wave(float factor, float percent);
 
 #endif

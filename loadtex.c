@@ -105,44 +105,50 @@ unsigned int LoadTexBMP(const char* file)
  * 
  */
  
-unsigned int loadPng(const char* filename)
+unsigned int loadPng(char* filename[], int n, unsigned int textures[])
 {
-  unsigned error;
-  unsigned char* image;
-  unsigned width, height;
-  unsigned int texture;
-
-  error = lodepng_decode32_file(&image, &width, &height, filename);
-  if(error) printf("error %u: %s\n", error, lodepng_error_text(error));
-
-  // Texture size must be power of two for the primitive OpenGL version this is written for. Find next power of two.
-  size_t u2 = 1; while(u2 < width) u2 *= 2;
-  size_t v2 = 1; while(v2 < height) v2 *= 2;
-
-  // Make power of two version of the image.
-  unsigned char image2[u2 * v2 * 4];
-  size_t y, x, c;
-  for(y = 0; y < height; y++)
-  for(x = 0; x < width; x++)
-  for(c = 0; c < 4; c++)
+    
+  glGenTextures(n, textures);
+  int i;
+  
+  for(i = 0; i < n; i++)
   {
-    image2[4 * u2 * y + 4 * x + c] = image[4 * width * y + 4 * x + c];
+      unsigned error;
+      unsigned char* image;
+      unsigned width, height;
+
+      error = lodepng_decode32_file(&image, &width, &height, filename[i]);
+      if(error) printf("error %u: %s\n", error, lodepng_error_text(error));
+
+      // Texture size must be power of two for the primitive OpenGL version this is written for. Find next power of two.
+      size_t u2 = 1; while(u2 < width) u2 *= 2;
+      size_t v2 = 1; while(v2 < height) v2 *= 2;
+
+      // Make power of two version of the image.
+      unsigned char *image2 = (unsigned char*) malloc(sizeof(unsigned char) * u2 * v2 * 4);
+      size_t y, x, c;
+      for(y = 0; y < height; y++)
+      for(x = 0; x < width; x++)
+      for(c = 0; c < 4; c++)
+      {
+        image2[4 * u2 * y + 4 * x + c] = image[4 * width * y + 4 * x + c];
+      }
+      
+      glEnable(GL_TEXTURE_2D);
+       
+      glBindTexture(GL_TEXTURE_2D, textures[i]);
+     
+      glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); 
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); 
+      
+      glTexImage2D(GL_TEXTURE_2D, 0, 4, u2, v2, 0, GL_RGBA, GL_UNSIGNED_BYTE, image2);
+
+      free(image);
+      free(image2);
   }
   
-  glEnable(GL_TEXTURE_2D);
-   
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
- 
-  glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); 
-  
-  glTexImage2D(GL_TEXTURE_2D, 0, 4, u2, v2, 0, GL_RGBA, GL_UNSIGNED_BYTE, image2);
-
-  free(image);
-  
-  return texture;
+  return 0;
 }
