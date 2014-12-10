@@ -17,12 +17,15 @@ under the Creative Commons Attribution 3.0 Unported license.
 A PNG loading library called lodePng is used.
 http://lodev.org/lodepng/
 
+What was previously loadtexbmp.c is now "loadtex.c" and has loadPng
+included inside it.
+
 <----------------------Project Awesomeness--------------------------------->
 
 I'm particularly proud of the fact that I got a lot of alpha based things to play
 nicely with each other. There's a neat trick of keeping the depth test on but
 not writing to the depth buffer that I used. I'm also proud of how fun it is to play
-around with the particles and make them do fun things.
+around with the particles and watch how they react to different modes.
 
 
 <-------------------------Controls------------------------------------->

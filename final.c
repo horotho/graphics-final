@@ -8,7 +8,7 @@
 
 #define PI 3.14159265
 #define NUM_TREES 1
-#define NUM_FIRE_PARTICLES 3000
+#define NUM_FIRE_PARTICLES 4000
 #define NUM_SNOW_PARTICLES 2000
 #define AXES_LENGTH 3
 
@@ -27,7 +27,7 @@ enum {LIGHTING_ON = 1, LIGHTING_OFF = 0};
 
 char* text[] = {"Orthogonal", "Perspective"};
 
-char* pmodes[] = {"Normal", "Wavy", "Lightspeed", "Random", "Wind", "Chirp"};
+char* pmodes[] = {"Normal", "Vortex", "Lightspeed", "Random", "Wind", "Chirp"};
 
 int MODE = MODE_PERSPECTIVE;
 int AXES_MODE = AXES_MODE_ON;
@@ -60,7 +60,7 @@ color end = (color) {240, 240, 0};
 int colorChanged = 0;
 
 unsigned int particle_textures[5];
-unsigned int misc_tex[3];
+unsigned int misc_tex[1];
 unsigned int cabin_tex[4];
 unsigned int sky_textures[1];
 unsigned int prev_texture;
@@ -72,13 +72,13 @@ vec3* tree_positions;
 void initTextures()
 {
   char* pnames[] = {"textures/flame3.png", "textures/smoke.png", "textures/rain.png"};
-  char* mnames[] = {"textures/ground.png", "textures/ftree.png", "textures/house_front.png"};
+  char* mnames[] = {"textures/ground.png"};
   char* snames[] = {"textures/sky.png"};
   char* cnames[] = {"textures/log_cabin.png", "textures/cw.png", 
                     "textures/cf.png", "textures/thatch.png"};
   
   loadPng(pnames, 3, particle_textures);
-  loadPng(mnames, 3, misc_tex);
+  loadPng(mnames, 1, misc_tex);
   loadPng(snames, 1, sky_textures);
   loadPng(cnames, 4, cabin_tex);
   
@@ -220,13 +220,13 @@ void drawHouse()
   glBegin(GL_TRIANGLES);
       glNormal3f(-1, 0, 0);
       glTexCoord2f(0, 0);    glVertex3f(0, 0.6, 0);
-      glTexCoord2f(0.5, 0.5);  glVertex3f(0, 1, 0.5);
-      glTexCoord2f(0.5, 0);  glVertex3f(0, 0.6, 1);
+      glTexCoord2f(0.7, 0.7);  glVertex3f(0, 1, 0.5);
+      glTexCoord2f(0.7, 0);  glVertex3f(0, 0.6, 1);
       
-      glNormal3f(1, 0, 0);
+      glNormal3f(-1, 0, 0);
       glTexCoord2f(0, 0);    glVertex3f(1, 0.6, 0);
-      glTexCoord2f(0.5, 0.5);  glVertex3f(1, 1, 0.5);
-      glTexCoord2f(0.5, 0);  glVertex3f(1, 0.6, 1);
+      glTexCoord2f(0.7, 0.7);  glVertex3f(1, 1, 0.5);
+      glTexCoord2f(0.7, 0);  glVertex3f(1, 0.6, 1);
   glEnd();
   
   glBindTexture(GL_TEXTURE_2D, cabin_tex[3]);
@@ -246,12 +246,13 @@ void drawHouse()
   
   glBindTexture(GL_TEXTURE_2D, cabin_tex[1]);
   glEnable(GL_BLEND);
+  
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   
   glBegin(GL_QUADS);
     
      // House Back
-      glNormal3f(1, 0, 0);
+      glNormal3f(-1, 0, 0);
       glTexCoord2f(0.8, 0.6);  glVertex3f(0, 0, 0);
       glTexCoord2f(0, 0.6);    glVertex3f(0, 0, 1);
       glTexCoord2f(0, 0);      glVertex3f(0, 0.6, 1);
@@ -260,6 +261,7 @@ void drawHouse()
   glEnd();
   
   glBindTexture(GL_TEXTURE_2D, cabin_tex[2]);
+  glDepthMask(0);
   
   glBegin(GL_QUADS);
     
@@ -276,6 +278,7 @@ void drawHouse()
   
   prev_texture = cabin_tex[2];
   glBindTexture(GL_TEXTURE_2D, 0);
+  glDepthMask(1);
   
   glDisable(GL_BLEND);
 }
@@ -405,7 +408,7 @@ void drawGround()
         
       glTranslated(i, -11, j);
       
-      //glColor4ub(255, 255, 255, 255);
+      glColor4ub(255, 255, 255, 255);
       glBegin(GL_QUADS);
         glNormal3f(0, 1, 0);
         glTexCoord2d(0, 0); glVertex3f(0, 0, 0);
@@ -422,66 +425,6 @@ void drawGround()
  
 }
 
-void drawSourcePrism(double x, double y, double z, double s)
-{
-  
-   /* 
-   * Material Setup with modifications
-   * Credit: Prof Schreuder
-   */
-   
-  float white[] = {1, 1, 1, 1};
-  float emit[] = {1, 1, 1, 1};
-  float shiny[] = {16};
-
-  glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shiny);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, white);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emit);
-   
-  glPushMatrix();
-  
-  glTranslatef(x, y, z);
-  glScalef(s, s, s);
-  
-  //Source prism is white
-  glColor3f(1.0, 1.0, 1.0);
-  
-  glBegin(GL_TRIANGLES);
-    
-    glNormal3f(0.25, -0.125, 0.0);
-    glVertex3f(0, 0, 0);
-    glVertex3f(0.25, 0.5, 0.25);
-    glVertex3f(0, 0, 0.5);
-    
-    glNormal3f(0.0, 0.125, -0.25);
-    glVertex3f(0, 0, 0);
-    glVertex3f(0.25, 0.5, 0.25);
-    glVertex3f(0.5, 0, 0);
-    
-    glNormal3f(0.25, 0.125, 0.0);
-    glVertex3f(0.5, 0, 0);
-    glVertex3f(0.25, 0.5, 0.25);
-    glVertex3f(0.5, 0, 0.5);
-    
-    glNormal3f(0.0, 0.125, 0.25);
-    glVertex3f(0.5, 0, 0.5);
-    glVertex3f(0.25, 0.5, 0.25);
-    glVertex3f(0, 0, 0.5);
-  
-  glEnd();
-
-  glBegin(GL_QUADS);
-    
-    glNormal3f(0, -1.0, 0);
-    glVertex3f(0, 0, 0);
-    glVertex3f(0.5, 0, 0);
-    glVertex3f(0.5, 0, 0.5);
-    glVertex3f(0, 0, 0.5);
-    
-  glEnd();
-  
-  glPopMatrix();
-}
 
 void display()
 {
@@ -555,7 +498,7 @@ void display()
     drawLogs(); // Draw the firepit logs
     drawHouse(); // Draw the house
     //drawTrees();
-    drawParticles(snow, NUM_SNOW_PARTICLES);
+    drawParticles(snow, NUM_SNOW_PARTICLES); // Draw particles last because they're transparent
     drawParticles(fire, NUM_FIRE_PARTICLES);
     
     glDisable(GL_BLEND);
@@ -569,15 +512,13 @@ void display()
     glColor3f(1, 1, 1);
     glWindowPos2i(5, 5);
 
-    Print("End Color-> R: %3d G: %3d B: %3d", end.r, end.g, end.b);
+    Print("End Color-> R: %d G: %d B: %d", end.r, end.g, end.b);
 
     glWindowPos2i(5, 18);
-    Print("Start Color -> R: %3d G: %3d B: %3d", start.r, start.g, start.b);
+    Print("Start Color -> R: %d G: %d B: %d", start.r, start.g, start.b);
           
-    /* End Code Borrowing */
-
     glWindowPos2i(5, 32);
-    Print("Particle = %s", pmodes[PARTICLE_MODE]);
+    Print("Particle Mode = %s", pmodes[PARTICLE_MODE]);
                   
     glFlush();
     glutSwapBuffers();
@@ -875,7 +816,7 @@ int main(int argc, char *argv[])
 
   glFogi(GL_FOG_MODE, GL_EXP);
   glFogfv(GL_FOG_COLOR, fogColor); 
-  glFogf(GL_FOG_DENSITY, 0.08f); 
+  glFogf(GL_FOG_DENSITY, 0.07f); 
   glEnable(GL_FOG);
   
   glutMainLoop();

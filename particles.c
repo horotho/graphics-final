@@ -2,8 +2,8 @@
 #include "CSCIx229.h"
 #include "time.h"
 
-#define INITIAL_SCALE 0.55
-#define END_SCALE 0.35
+#define INITIAL_SCALE 0.65
+#define END_SCALE 0.45
 #define INITIAL_Y -10.8
 #define FLAME_INITIAL_COLOR (color) {225, 0, 0}
 #define PI 3.1415
@@ -64,11 +64,11 @@ void changeVelocity(particle* parray, int len, int type, int velType)
       
           if(type == FIRE)
           {
-            p->vxs = 2*getRandom() - 1;
-            p->vys = 2;
-            p->vzs = 2*getRandom() - 1;
+            p->vxs = 4*getRandom() - 2;
+            p->vys = 4*getRandom() - 2;
+            p->vzs = 4*getRandom() - 2;
             
-            p->vy = &linear;
+            p->vy = &randerm;
             p->vx = &randerm;
             p->vz = &randerm;
           }
@@ -286,10 +286,10 @@ void onParticleDeathSmoke(particle *p, double time)
 void onParticleDeathFlame(particle *p, double time)
 {
   p->texture_id = 1;
-  p->life_time = 1.5;
+  p->life_time = 2;
   p->spawn_time = time;
   
-  p->initial_scale = 0.75;
+  p->initial_scale = 0.4;
   p->end_scale = 0;
   p->current_scale = p->initial_scale;
   
